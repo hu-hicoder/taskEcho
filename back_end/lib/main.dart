@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'dart:convert'; // Base64エンコーディングに必要
 import 'package:googleapis/speech/v1.dart' as speech;
-import 'package:http/http.dart' as http;
 import 'package:googleapis_auth/auth_io.dart' as auth;
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:typed_data'; // Uint8Listのために追加

@@ -30,7 +30,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  http: ^0.13.3   # Google APIリクエスト用
   googleapis: ^9.0.0   # Google APIパッケージ
   googleapis_auth: ^1.1.0   # 認証用
   js: ^0.6.3
@@ -59,9 +58,6 @@ dev_dependencies:
 flutter:
   assets:
     - assets/service_account.json
-    - assets/test_audio.raw
-
-
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
   # the material Icons class.
