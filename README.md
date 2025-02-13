@@ -1,7 +1,9 @@
 ### インストール
 
 最初に  
-flutter pub get  
+```
+flutter pub get
+```
 を実行  
 
 ### 実機テスト
@@ -18,9 +20,13 @@ ios
  前使ってたiPhoneの接続悪すぎて試せなかった  
 
  #### 実行コマンド
- flutter devices  
+```
+ flutter devices
+```
 これで自分のデバイスが検知されてれば実行可能  
-　flutter run  
+```
+ flutter run
+```
  デバイスを選ぶと実行できるはず  
 
 # flutter_vosk
