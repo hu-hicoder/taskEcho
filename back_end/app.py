@@ -1,0 +1,161 @@
+import sounddevice as sd
+import queue, time
+import sys
+import os
+import json
+from google.cloud import speech
+from google.oauth2 import service_account
+from flask import Flask, jsonify
+from flask import request
+from flask_cors import CORS
+from threading import Thread
+from dotenv import load_dotenv
+import google.generativeai as genai
+from collections import deque
+import os.path
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from datetime import datetime
+from time import sleep
+
+# Flaskサーバーの初期化
+app = Flask(__name__)
+CORS(app)
+
+# Google Cloudの認証情報を読み込む
+def get_speech_client():
+    credentials = service_account.Credentials.from_service_account_file(
+        './assets/service_account.json'  # 認証情報ファイルのパスを指定
+    )
+    client = speech.SpeechClient(credentials=credentials)
+    return client
+
+client = get_speech_client()
+
+# 変数の初期化
+recognized_texts = deque(maxlen=10)
+recognized_text = ""
+summary = ""
+partial_text = ""
+is_recognizing = False  # 音声認識の状態を保持する変数
+finishSummarize = False # 要約終了フラグ
+audio_buffer = bytearray()
+c_jud = True
+previous_text_long = 0  # previous_text_longを初期化
+
+
+# 新しいrecognized_textを設定し、要約を行う関数
+def update_recognized_text(new_text):
+    summary = summarize(new_text)
+    print("要約結果:", summary)
+    recognized_texts.append((new_text, summary))
+
+
+# グローバル変数としてキーワードのリストを初期化
+keyword_included = ["重要", "大事", "課題", "提出", "テスト", "レポート", "締め切り", "期限"]
+
+# キーワードを設定するエンドポイント
+@app.route('/set_keywords', methods=['POST'])
+def set_keywords():
+    global keyword_included
+    data = request.get_json()
+    keyword_included = data.get('keywords', keyword_included)
+    return jsonify({"message": "キーワードを設定しました"}), 200
+
+def summarize(text):
+    prompt = f"次のテキストを要約して結果のみをください.: {text}"
+    gemini_pro = genai.GenerativeModel("gemini-pro")
+    sleep(1) #さすがに(?)
+    response = gemini_pro.generate_content(prompt)
+    return response.text
+
+# /recognizeエンドポイントを更新
+@app.route('/recognize', methods=['GET'])
+def get_recognized_text():
+    global summary
+    keyword = "授業中"
+    exist_keyword = False
+    for k in keyword_included:
+        if k in partial_text[-20:]:
+            keyword = k
+            exist_keyword = True
+            break
+    if recognized_texts:
+        recognized_text, summary = recognized_texts[-1]
+    else:
+        recognized_text, summary = "", ""
+    return jsonify({'recognized_text' : recognized_text ,'keyword': keyword, 'summarized_text': summary, 'exist_keyword' : exist_keyword}), 200
+
+# If modifying these scopes, delete the file token.json.
+SCOPES = ['https://www.googleapis.com/auth/calendar.events']
+
+# Googleカレンダーにイベントを作成するエンドポイント
+@app.route('/create_event', methods=['POST'])
+def create_event():
+    eventTime = request.json.get('eventTime')
+    current_index = request.json.get('currentIndex')
+    if not eventTime or not current_index:
+        return jsonify({'error': 'Missing eventTime or currentIndex'}), 400
+
+    # eventTimeをdatetimeオブジェクトに変換
+    try:
+        eventTime = datetime.fromisoformat(eventTime)
+    except ValueError:
+        return jsonify({'error': 'Invalid eventTime format'}), 400
+
+    creds = None
+    # The file token.json stores the user's access and refresh tokens, and is
+    # created automatically when the authorization flow completes for the first
+    # time.
+    if os.path.exists("token.json"):
+        creds = Credentials.from_authorized_user_file("token.json", SCOPES)
+    # If there are no (valid) credentials available, let the user log in.
+    if not creds or not creds.valid:
+        if creds and creds.expired and creds.refresh_token:
+            creds.refresh(Request())
+        else:
+            flow = InstalledAppFlow.from_client_secrets_file(
+                "assets/credentials.json", SCOPES
+            )
+            creds = flow.run_local_server(port=0)
+            # Save the credentials for the next run
+        with open("token.json", "w") as token:
+            token.write(creds.to_json())
+
+    try:
+        service = build("calendar", "v3", credentials=creds)
+
+        event = {
+            'summary': current_index,
+            'start': {
+                'dateTime': eventTime.isoformat(),
+                'timeZone': 'Japan',
+            },
+            'end': {
+                'dateTime': eventTime.isoformat(),
+                'timeZone': 'Japan',
+            },
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                {'method': 'email', 'minutes': 24 * 60},
+                {'method': 'popup', 'minutes': 10},
+                ],
+            },
+        }
+
+        event = service.events().insert(calendarId='primary', body=event).execute()
+        print('Event created: %s' % (event.get('htmlLink')))
+        return jsonify({'message': 'Event created successfully'}), 200
+
+    except HttpError as error:
+        print(f"An error occurred: {error}")
+        return jsonify({'message': 'An error occurred'}), 400
+
+# Flaskサーバーの実行
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
