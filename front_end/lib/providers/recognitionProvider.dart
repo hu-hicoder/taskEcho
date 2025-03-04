@@ -18,7 +18,6 @@ class RecognitionProvider with ChangeNotifier {
   }
 
   /// 初期化処理（アプリ起動時に1回だけ実行）
-  /// 初期化処理（アプリ起動時に1回だけ実行）
   Future<void> _initSpeech() async {
     _speechEnabled = await _speechToText.initialize(
       onStatus: (status) {
