@@ -36,7 +36,6 @@ dependencies:
   flutter_webrtc: ^0.8.0
   intl: ^0.17.0
   url_launcher: ^6.0.9
-  flutter_dotenv: ^5.0.2
   provider: ^6.0.0
 
 
@@ -44,11 +43,8 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   speech_to_text: ^7.0.0
-<<<<<<<< HEAD:front_end/pubspec.yaml
-========
   permission_handler: ^11.3.1
   flutter_dotenv: ^5.2.1
->>>>>>>> 902a11787157b69ba5bde7d1ba9a5739a851e18b:pubspec.yaml
 
 dev_dependencies:
   flutter_test:
