@@ -24,7 +24,7 @@ class SpeechToTextApp extends StatelessWidget {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
-  await dotenv.load(fileName: ".env");
+  //await dotenv.load(fileName: ".env");
   runApp(
     MultiProvider(
       providers: [
