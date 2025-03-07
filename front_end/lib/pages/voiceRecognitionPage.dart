@@ -92,12 +92,17 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
         // 🔄 リストの更新
         setState(() {
+
           if (recognizedTexts.length > 3) {
             recognizedTexts.removeAt(0);
             summarizedTexts.removeAt(0);
           }
           recognizedTexts.add(newRecognizedText);
           summarizedTexts.add(newSummarizedText);
+          if (newRecognizedText.length > 100){
+            recognizedTexts = ["", "", ""];
+            summarizedTexts = ["", "", ""];
+          }
           currentIndex = recognizedTexts.length - 1;
 
           // キーワードに応じて点滅処理を実行

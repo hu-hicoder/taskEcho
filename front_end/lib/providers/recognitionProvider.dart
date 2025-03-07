@@ -7,6 +7,7 @@ class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
   bool _speechEnabled = false;
   String _lastWords = '';
+  int resetRecognition = 200; // 認識文字数がこの値を超えたらリセット
   final SpeechToText _speechToText = SpeechToText();
 
   bool get isRecognizing => _isRecognizing;
@@ -70,10 +71,11 @@ class RecognitionProvider with ChangeNotifier {
   }
 
   /// 音声認識の結果をリアルタイムで更新
-  void _onSpeechResult(SpeechRecognitionResult result) {
+  void _onSpeechResult(SpeechRecognitionResult result) async {
     print("onSpeechResult() が呼ばれました");
     _lastWords += " " + result.recognizedWords;
     print('onSpeechResult: $_lastWords');
+    
     notifyListeners(); // UIを更新
 
     // もし認識が止まったら自動で再開
@@ -81,6 +83,13 @@ class RecognitionProvider with ChangeNotifier {
       Future.delayed(Duration(seconds: 1), () {
         if (_isRecognizing) startListening(); // 🔥 停止中でなければ再開
       });
+    }
+
+    // _lastWords が文字を超えた場合に音声認識を再起動
+    if (_lastWords.length > resetRecognition) {
+      await stopListening();
+      _lastWords = ''; // リセット
+      await startListening();
     }
   }
 }
