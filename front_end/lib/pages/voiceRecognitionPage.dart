@@ -10,6 +10,9 @@ import 'package:provider/provider.dart';
 import '../providers/classProvider.dart';
 import '../providers/textsDataProvider.dart';
 import '../providers/recognitionProvider.dart';
+import '../dialogs/SettingDialog.dart';
+import '../dialogs/KeywordSettingDialog.dart';
+import '../dialogs/ClassSettingDialog.dart';
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -30,7 +33,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   //bool canFlash = true; // フラグを追加
   bool existKeyword = false; // キーワードが存在するかのフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
-  List<String> keywords = [
+  /* List<String> keywords = [
     "重要",
     "大事",
     "課題",
@@ -40,7 +43,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     "締め切り",
     "期限",
     "動作確認"
-  ];
+  ]; */
   int currentIndex = 0; //要約とかの文章を受け取るリストのインデックスを管理する変数
   TextEditingController classController = TextEditingController();
   // 呼び出し済みのsummarizedTextsを追跡するセットを定義
@@ -92,14 +95,13 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
         // 🔄 リストの更新
         setState(() {
-
           if (recognizedTexts.length > 3) {
             recognizedTexts.removeAt(0);
             summarizedTexts.removeAt(0);
           }
           recognizedTexts.add(newRecognizedText);
           summarizedTexts.add(newSummarizedText);
-          if (newRecognizedText.length > 100){
+          if (newRecognizedText.length > 100) {
             recognizedTexts = ["", "", ""];
             summarizedTexts = ["", "", ""];
           }
@@ -705,25 +707,25 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                       }).toList(),
                     ),
                     SizedBox(height: 20),
-                    // 設定ボタンの追加
-                    // Align(
-                    //   alignment: Alignment.bottomLeft,
-                    //   child: ElevatedButton(
-                    //     onPressed: () {
-                    //       showSettingsDialog(context); // 設定ダイアログを表示
-                    //     },
-                    //     style: ElevatedButton.styleFrom(
-                    //       backgroundColor: Colors.cyanAccent, // ボタンの背景色
-                    //       padding: EdgeInsets.all(16), // アイコンの周りのパディング
-                    //       shape: CircleBorder(), // ボタンを円形にする
-                    //       elevation: 0, // 影を削除
-                    //     ),
-                    //     child: Icon(
-                    //       Icons.settings,
-                    //       color: Colors.black,
-                    //     ),
-                    //   ),
-                    // ),
+                    //設定ボタンの追加
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          showSettingsDialog(context); // 設定ダイアログを表示
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.cyanAccent, // ボタンの背景色
+                          padding: EdgeInsets.all(16), // アイコンの周りのパディング
+                          shape: CircleBorder(), // ボタンを円形にする
+                          elevation: 0, // 影を削除
+                        ),
+                        child: Icon(
+                          Icons.settings,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
