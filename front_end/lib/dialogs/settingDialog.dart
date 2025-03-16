@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'KeywordSettingDialog.dart';
-import 'ClassSettingDialog.dart';
+import 'keywordSettingDialog.dart';
+import 'classSettingDialog.dart';
 
 void showSettingsDialog(BuildContext context) {
   showDialog(
