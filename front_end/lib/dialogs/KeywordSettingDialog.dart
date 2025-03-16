@@ -46,13 +46,13 @@ void showKeywordSettingDialog(BuildContext context) {
                     decoration: InputDecoration(hintText: "新しいキーワードを入力"),
                   ),
                   SizedBox(height: 8), // テキストフィールドと注意書きの間にスペースを追加
-                  Align(
+                  /* Align(
                     alignment: Alignment.centerRight, //右寄せ
                     child: Text(
                       "※「保存」を押さなければ変更が反映されません", //←ということもないかもしれない
                       style: TextStyle(color: Colors.redAccent, fontSize: 12),
                     ),
-                  ),
+                  ), */
                 ],
               ),
             ),
@@ -61,7 +61,7 @@ void showKeywordSettingDialog(BuildContext context) {
                 onPressed: () {
                   Navigator.of(context).pop(); // ダイアログを閉じる
                 },
-                child: Text("キャンセル"),
+                child: Text("閉じる"),
               ),
               TextButton(
                 onPressed: () {
@@ -75,12 +75,12 @@ void showKeywordSettingDialog(BuildContext context) {
                 },
                 child: Text("追加"),
               ),
-              TextButton(
+              /* TextButton(
                 onPressed: () async {
                   Navigator.of(context).pop(); // ダイアログを閉じる
                 },
                 child: Text("保存"),
-              ),
+              ), */
             ],
           );
         },
