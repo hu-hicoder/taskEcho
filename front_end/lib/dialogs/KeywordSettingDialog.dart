@@ -1,18 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/keywordProvider.dart';
 
 void showKeywordSettingDialog(BuildContext context) {
   final TextEditingController keywordController = TextEditingController();
-  final List<String> keywords = [
-    "重要",
-    "大事",
-    "課題",
-    "提出",
-    "テスト",
-    "レポート",
-    "締め切り",
-    "期限",
-    "動作確認"
-  ];
 
   showDialog(
     context: context,
@@ -28,20 +19,24 @@ void showKeywordSettingDialog(BuildContext context) {
                 children: [
                   // キーワードの一覧を表示
                   Expanded(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: keywords.length,
-                      itemBuilder: (context, index) {
-                        return ListTile(
-                          title: Text(keywords[index]),
-                          trailing: IconButton(
-                            icon: Icon(Icons.delete, color: Colors.redAccent),
-                            onPressed: () {
-                              setState(() {
-                                keywords.removeAt(index); // キーワードを削除
-                              });
-                            },
-                          ),
+                    child: Consumer<KeywordProvider>(
+                      builder: (context, keywordProvider, child) {
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: keywordProvider.keywords.length,
+                          itemBuilder: (context, index) {
+                            return ListTile(
+                              title: Text(keywordProvider.keywords[index]),
+                              trailing: IconButton(
+                                icon:
+                                    Icon(Icons.delete, color: Colors.redAccent),
+                                onPressed: () {
+                                  keywordProvider
+                                      .removeKeyword(index); //キーワードの削除
+                                },
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -71,19 +66,17 @@ void showKeywordSettingDialog(BuildContext context) {
               TextButton(
                 onPressed: () {
                   // 新しいキーワードを追加
-                  setState(() {
-                    if (keywordController.text.isNotEmpty) {
-                      keywords.add(keywordController.text);
-                      keywordController.clear();
-                    }
-                  });
+                  if (keywordController.text.isNotEmpty) {
+                    context
+                        .read<KeywordProvider>()
+                        .addKeyword(keywordController.text);
+                    keywordController.clear();
+                  }
                 },
                 child: Text("追加"),
               ),
               TextButton(
                 onPressed: () async {
-                  // キーワードを保存（バックエンドに送信）
-                  // await sendKeywords();
                   Navigator.of(context).pop(); // ダイアログを閉じる
                 },
                 child: Text("保存"),
