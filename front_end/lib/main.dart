@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart'; // providerをインポート
 import 'providers/MordalProvider.dart';
 import 'providers/classProvider.dart';
+import 'providers/keywordProvider.dart';
 import 'providers/textsDataProvider.dart';
 import 'providers/recognitionProvider.dart';
 
@@ -32,6 +33,7 @@ void main() async {
         ChangeNotifierProvider(create: (context) => ModalProvider()),
         ChangeNotifierProvider(create: (_) => TextsDataProvider()),
         ChangeNotifierProvider(create: (_) => RecognitionProvider()),
+        ChangeNotifierProvider(create: (_) => KeywordProvider()),
       ],
       child: SpeechToTextApp(),
     ),
