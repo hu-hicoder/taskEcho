@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../providers/classProvider.dart';
 import '../providers/textsDataProvider.dart';
 import '../providers/recognitionProvider.dart';
+import 'package:speech_to_text_ultra/speech_to_text_ultra.dart';
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -20,6 +21,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   //String recognizedText = "認識結果がここに表示されます";
   //String summarizedText = "要約データがここに表示されます";
   List<String> recognizedTexts = ["認識結果1", "認識結果2", "認識結果3"];
+  bool mIsListening = false; // 音声認識中かどうかのフラグ
   List<String> summarizedTexts = ["要約1", "要約2", "要約3"];
   //bool isRecognizing = false;
   String keyword = "授業中";
@@ -242,29 +244,33 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   //   print("==========");
   // }
 
-// 音声認識の開始
-  Future<void> startRecording() async {
-    final recognitionProvider =
-        Provider.of<RecognitionProvider>(context, listen: false);
+  // // 音声認識の開始
+  // Future<void> startListening() async {
 
-    if (recognitionProvider.isRecognizing) {
-      print("⚠️ すでに音声認識中です。");
-      return;
-    }
+  //   if (!_speechEnabled || _speechToText.isListening) {
+  //     print("音声認識が使用できないか、既にリスニング中です");
+  //     return;
+  //   }
 
-    recognitionProvider.startListening(); // 音声認識を開始
-    print("🎤 音声認識を開始しました");
+  //   bool available = await _speechToText.initialize();
 
-    // 定期的にデータを取得するためのタイマーを設定
-    timer?.cancel(); // 既存のタイマーを停止
-    timer = Timer.periodic(Duration(seconds: 1), (Timer t) {
-      if (recognitionProvider.isRecognizing) {
-        fetchRecognizedText(); // 認識したテキストを取得
-      } else {
-        t.cancel();
-      }
-    });
-  }
+  //   if (available) {
+  //     print("音声認識を開始します...");
+  //     _isRecognizing = true; // 🔥 `true` に変更して UI を更新
+  //     notifyListeners();
+
+  //     await _speechToText.listen(
+  //       onResult: _onSpeechResult,
+  //       partialResults: true,
+  //       localeId: "ja_JP",
+  //       listenMode: ListenMode.dictation,
+  //     );
+
+  //     print("SpeechToText のリスニング開始");
+  //   } else {
+  //     print("SpeechToText の初期化に失敗");
+  //   }
+  // }
 
   // 音声認識の停止
   Future<void> stopRecording() async {
@@ -624,37 +630,64 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                       }),
                     ),
                     SizedBox(height: 20),
-                    // 録音開始/停止ボタン（色と視認性の改善）
-                    ElevatedButton.icon(
-                      icon: Icon(
-                        recognitionProvider.isRecognizing
-                            ? Icons.stop
-                            : Icons.mic,
-                        color: Colors.black,
-                      ),
-                      label: Text(
-                        recognitionProvider.isRecognizing ? '停止' : '開始',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      onPressed: () {
-                        if (recognitionProvider.isRecognizing) {
-                          stopRecording(); // 音声認識を停止
-                        } else {
-                          startRecording(); // 音声認識を開始
-                        }
+                    SpeechToTextUltra(
+                      ultraCallback: (String liveText, String finalText, bool isListening) {
+                        setState(() {
+                          if (!isListening) {
+                            // finalTextが空なら、liveTextをmEntireResponseにセット
+                            if (finalText.isNotEmpty) {
+                              recognizedTexts[1] = finalText;
+                            } else if (liveText.isNotEmpty) {
+                              recognizedTexts[1] = liveText;
+                            }
+                          } else {
+                            // リアルタイムのテキストを更新
+                            recognizedTexts[0] = liveText;
+                          }
+                          mIsListening = isListening;
+                          // ターミナルにデバッグ情報を表示
+                          print("----- SpeechToTextUltra Callback -----");
+                          print("isListening: $mIsListening");
+                          print("liveText: $recognizedTexts[0]");
+                          print("finalText: $finalText");
+                          print("mEntireResponse: $recognizedTexts[1]");
+                          print("-------------------------------------");
+                        });
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: recognitionProvider.isRecognizing
-                            ? Colors.redAccent
-                            : Colors.tealAccent, // より視認性の高い色に変更
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        elevation: 10,
-                      ),
+                      toPauseIcon: const Icon(Icons.stop, size: 50, color: Colors.red),
+                      toStartIcon: const Icon(Icons.mic, size: 50, color: Colors.green),
                     ),
+                    // 録音開始/停止ボタン（色と視認性の改善）
+                    // ElevatedButton.icon(
+                    //   icon: Icon(
+                    //     recognitionProvider.isRecognizing
+                    //         ? Icons.stop
+                    //         : Icons.mic,
+                    //     color: Colors.black,
+                    //   ),
+                    //   label: Text(
+                    //     recognitionProvider.isRecognizing ? '停止' : '開始',
+                    //     style: TextStyle(color: Colors.black),
+                    //   ),
+                    //   onPressed: () {
+                    //     if (recognitionProvider.isRecognizing) {
+                    //       stopRecording(); // 音声認識を停止
+                    //     } else {
+                    //       startRecording(); // 音声認識を開始
+                    //     }
+                    //   },
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: recognitionProvider.isRecognizing
+                    //         ? Colors.redAccent
+                    //         : Colors.tealAccent, // より視認性の高い色に変更
+                    //     padding:
+                    //         EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(30),
+                    //     ),
+                    //     elevation: 10,
+                    //   ),
+                    // ),
                     SizedBox(height: 20),
                     // キーワード表示
                     Container(

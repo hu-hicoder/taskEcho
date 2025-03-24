@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_recognition_result.dart';
-import 'package:speech_to_text_ultra/speech_to_text_ultra.dart';
+import 'package:speech_to_text/speech_recognition_result.dart'; //ultraに変更
+import 'package:speech_to_text/speech_to_text.dart';
+// import 'package:speech_to_text_ultra/speech_to_text_ultra.dart';
 import 'dart:developer';
 
 class RecognitionProvider with ChangeNotifier {
@@ -44,7 +45,7 @@ class RecognitionProvider with ChangeNotifier {
     if (available) {
       print("音声認識を開始します...");
       _isRecognizing = true; // 🔥 `true` に変更して UI を更新
-      notifyListeners();
+  
 
       await _speechToText.listen(
         onResult: _onSpeechResult,
@@ -52,7 +53,7 @@ class RecognitionProvider with ChangeNotifier {
         localeId: "ja_JP",
         listenMode: ListenMode.dictation,
       );
-
+      notifyListeners();
       print("SpeechToText のリスニング開始");
     } else {
       print("SpeechToText の初期化に失敗");
@@ -65,6 +66,7 @@ class RecognitionProvider with ChangeNotifier {
 
     print("音声認識を停止します...");
     _isRecognizing = false;
+
     notifyListeners(); // UI 更新
 
     await _speechToText.stop();
@@ -73,15 +75,15 @@ class RecognitionProvider with ChangeNotifier {
   /// 音声認識の結果をリアルタイムで更新
   void _onSpeechResult(SpeechRecognitionResult result) async {
     print("onSpeechResult() が呼ばれました");
-    _lastWords += " " + result.recognizedWords;
+    _lastWords = " " + result.recognizedWords;
     print('onSpeechResult: $_lastWords');
-    
+  
     notifyListeners(); // UIを更新
 
     // もし認識が止まったら自動で再開
     if (!_speechToText.isListening && _isRecognizing) {
       Future.delayed(Duration(seconds: 1), () {
-        if (_isRecognizing) startListening(); // 🔥 停止中でなければ再開
+        if (_isRecognizing && !_speechToText.isListening) startListening(); // 🔥 停止中でなければ再開
       });
     }
 
