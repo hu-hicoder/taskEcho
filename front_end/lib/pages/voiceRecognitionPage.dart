@@ -20,7 +20,7 @@ class VoiceRecognitionPage extends StatefulWidget {
 class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   //String recognizedText = "認識結果がここに表示されます";
   //String summarizedText = "要約データがここに表示されます";
-  List<String> recognizedTexts = ["認識結果1", "認識結果2", "認識結果3"];
+  String recognizedTexts = "";
   bool mIsListening = false; // 音声認識中かどうかのフラグ
   List<String> summarizedTexts = ["要約1", "要約2", "要約3"];
   //bool isRecognizing = false;
@@ -70,67 +70,67 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   // }
 
   // サーバーからデータを取得する関数
-  Future<void> fetchRecognizedText() async {
-    final textsDataProvider =
-        Provider.of<TextsDataProvider>(context, listen: false);
-    final selectedClass =
-        Provider.of<ClassProvider>(context, listen: false).selectedClass;
-    final recognitionProvider =
-        Provider.of<RecognitionProvider>(context, listen: false);
+  // Future<void> fetchRecognizedText() async {
+  //   final textsDataProvider =
+  //       Provider.of<TextsDataProvider>(context, listen: false);
+  //   final selectedClass =
+  //       Provider.of<ClassProvider>(context, listen: false).selectedClass;
+  //   final recognitionProvider =
+  //       Provider.of<RecognitionProvider>(context, listen: false);
 
-    try {
-      // 🎙 認識結果を取得
-      String newRecognizedText = recognitionProvider.lastWords;
+  //   try {
+  //     // 🎙 認識結果を取得
+  //     String newRecognizedText = recognitionProvider.lastWords;
 
-      if (newRecognizedText.isNotEmpty) {
-        // 要約処理だけど今のところそのまま返す
-        String newSummarizedText = newRecognizedText;
+  //     if (newRecognizedText.isNotEmpty) {
+  //       // 要約処理だけど今のところそのまま返す
+  //       String newSummarizedText = newRecognizedText;
 
-        existKeyword = checkForKeyword(newRecognizedText);
+  //       existKeyword = checkForKeyword(newRecognizedText);
 
-        // 📝 Providerのデータを更新
-        textsDataProvider.addRecognizedText(selectedClass, newRecognizedText);
-        textsDataProvider.addSummarizedText(selectedClass, newSummarizedText);
+  //       // 📝 Providerのデータを更新
+  //       textsDataProvider.addRecognizedText(selectedClass, newRecognizedText);
+  //       textsDataProvider.addSummarizedText(selectedClass, newSummarizedText);
 
-        // 🔄 リストの更新
-        setState(() {
+  //       // 🔄 リストの更新
+  //       setState(() {
 
-          if (recognizedTexts.length > 3) {
-            recognizedTexts.removeAt(0);
-            summarizedTexts.removeAt(0);
-          }
-          recognizedTexts.add(newRecognizedText);
-          summarizedTexts.add(newSummarizedText);
-          if (newRecognizedText.length > 100){
-            recognizedTexts = ["", "", ""];
-            summarizedTexts = ["", "", ""];
-          }
-          currentIndex = recognizedTexts.length - 1;
+  //         if (recognizedTexts.length > 500) {
+  //           recognizedTexts = "";
+  //           summarizedTexts.removeAt(0);
+  //         }
+  //         recognizedTexts.add(newRecognizedText);
+  //         summarizedTexts.add(newSummarizedText);
+  //         if (newRecognizedText.length > 100){
+  //           recognizedTexts = ["", "", ""];
+  //           summarizedTexts = ["", "", ""];
+  //         }
+  //         currentIndex = recognizedTexts.length - 1;
 
-          // キーワードに応じて点滅処理を実行
-          if (existKeyword) {
-            startFlashing();
-          } else {
-            stopFlashing();
-          }
-        });
+  //         // キーワードに応じて点滅処理を実行
+  //         if (existKeyword) {
+  //           startFlashing();
+  //         } else {
+  //           stopFlashing();
+  //         }
+  //       });
 
-        print('認識結果：${summarizedTexts[currentIndex]}');
+  //       print('認識結果：${summarizedTexts[currentIndex]}');
 
-        // 📅 Googleカレンダー連携
-        // String? eventTime = await extractTime(newSummarizedText);
-        // if (eventTime != null && !calledeventTime.contains(eventTime)) {
-        //   await createEvent(eventTime, "授業予定");
-        //   calledeventTime.add(eventTime);
-        // }
-      }
-    } catch (e) {
-      print('エラーが発生しました: $e');
-      setState(() {
-        recognizedTexts[currentIndex] = "データ取得エラー";
-      });
-    }
-  }
+  //       // 📅 Googleカレンダー連携
+  //       // String? eventTime = await extractTime(newSummarizedText);
+  //       // if (eventTime != null && !calledeventTime.contains(eventTime)) {
+  //       //   await createEvent(eventTime, "授業予定");
+  //       //   calledeventTime.add(eventTime);
+  //       // }
+  //     }
+  //   } catch (e) {
+  //     print('エラーが発生しました: $e');
+  //     setState(() {
+  //       recognizedTexts[currentIndex] = "データ取得エラー";
+  //     });
+  //   }
+  // }
 
   // キーワード検出だけど動くように仮においてる
   bool checkForKeyword(String text) {
@@ -526,7 +526,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     final classProvider = Provider.of<ClassProvider>(context);
     final recognitionProvider = Provider.of<RecognitionProvider>(context);
 
-    return BasePage(
+return BasePage(
       body: Stack(
         children: [
           // グラデーション背景または点滅する背景の表示
@@ -553,81 +553,83 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     // 認識結果を表示するカード（縦に広く調整）
-                    Column(
-                      children: List.generate(summarizedTexts.length, (index) {
-                        return GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  content: SingleChildScrollView(
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          summarizedTexts[index],
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              color: Colors.yellow),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        SizedBox(height: 20),
-                                        Text(
-                                          recognizedTexts[index],
-                                          style: TextStyle(
-                                              fontSize: 24,
-                                              color: Colors.white),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        SizedBox(height: 20),
-                                      ],
+                    GestureDetector(
+                      onTap: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              content: SingleChildScrollView(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      summarizedTexts.isNotEmpty
+                                          ? summarizedTexts[0]
+                                          : '',
+                                      style: TextStyle(
+                                          fontSize: 20,
+                                          color: Colors.yellow),
+                                      textAlign: TextAlign.center,
                                     ),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: Text('閉じる'),
+                                    SizedBox(height: 20),
+                                    Text(
+                                      recognizedTexts!=""
+                                          ? recognizedTexts
+                                          : '',
+                                      style: TextStyle(
+                                          fontSize: 24,
+                                          color: Colors.white),
+                                      textAlign: TextAlign.center,
                                     ),
+                                    SizedBox(height: 20),
                                   ],
-                                );
-                              },
-                            );
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            height: cardHeight,
-                            padding: EdgeInsets.all(20.0),
-                            margin: EdgeInsets.symmetric(vertical: 20.0),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 5),
+                                ),
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                  child: Text('閉じる'),
                                 ),
                               ],
-                            ),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    summarizedTexts[index],
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      color: Colors.white,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
+                            );
+                          },
                         );
-                      }),
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: cardHeight,
+                        padding: EdgeInsets.all(20.0),
+                        margin: EdgeInsets.symmetric(vertical: 20.0),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 10,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: [
+                              Text(
+                                summarizedTexts.isNotEmpty
+                                    ? summarizedTexts[0]
+                                    : '',
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  color: Colors.white,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                     SizedBox(height: 20),
                     SpeechToTextUltra(
@@ -636,58 +638,27 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                           if (!isListening) {
                             // finalTextが空なら、liveTextをmEntireResponseにセット
                             if (finalText.isNotEmpty) {
-                              recognizedTexts[1] = finalText;
+                              recognizedTexts = finalText;
                             } else if (liveText.isNotEmpty) {
-                              recognizedTexts[1] = liveText;
+                              recognizedTexts = liveText;
                             }
                           } else {
                             // リアルタイムのテキストを更新
-                            recognizedTexts[0] = liveText;
+                            recognizedTexts = liveText;
                           }
                           mIsListening = isListening;
                           // ターミナルにデバッグ情報を表示
                           print("----- SpeechToTextUltra Callback -----");
                           print("isListening: $mIsListening");
-                          print("liveText: $recognizedTexts[0]");
+                          print("liveText: $recognizedTexts");
                           print("finalText: $finalText");
-                          print("mEntireResponse: $recognizedTexts[1]");
+                          print("mEntireResponse: $recognizedTexts");
                           print("-------------------------------------");
                         });
                       },
                       toPauseIcon: const Icon(Icons.stop, size: 50, color: Colors.red),
                       toStartIcon: const Icon(Icons.mic, size: 50, color: Colors.green),
                     ),
-                    // 録音開始/停止ボタン（色と視認性の改善）
-                    // ElevatedButton.icon(
-                    //   icon: Icon(
-                    //     recognitionProvider.isRecognizing
-                    //         ? Icons.stop
-                    //         : Icons.mic,
-                    //     color: Colors.black,
-                    //   ),
-                    //   label: Text(
-                    //     recognitionProvider.isRecognizing ? '停止' : '開始',
-                    //     style: TextStyle(color: Colors.black),
-                    //   ),
-                    //   onPressed: () {
-                    //     if (recognitionProvider.isRecognizing) {
-                    //       stopRecording(); // 音声認識を停止
-                    //     } else {
-                    //       startRecording(); // 音声認識を開始
-                    //     }
-                    //   },
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: recognitionProvider.isRecognizing
-                    //         ? Colors.redAccent
-                    //         : Colors.tealAccent, // より視認性の高い色に変更
-                    //     padding:
-                    //         EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(30),
-                    //     ),
-                    //     elevation: 10,
-                    //   ),
-                    // ),
                     SizedBox(height: 20),
                     // キーワード表示
                     Container(
@@ -738,25 +709,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                       }).toList(),
                     ),
                     SizedBox(height: 20),
-                    // 設定ボタンの追加
-                    // Align(
-                    //   alignment: Alignment.bottomLeft,
-                    //   child: ElevatedButton(
-                    //     onPressed: () {
-                    //       showSettingsDialog(context); // 設定ダイアログを表示
-                    //     },
-                    //     style: ElevatedButton.styleFrom(
-                    //       backgroundColor: Colors.cyanAccent, // ボタンの背景色
-                    //       padding: EdgeInsets.all(16), // アイコンの周りのパディング
-                    //       shape: CircleBorder(), // ボタンを円形にする
-                    //       elevation: 0, // 影を削除
-                    //     ),
-                    //     child: Icon(
-                    //       Icons.settings,
-                    //       color: Colors.black,
-                    //     ),
-                    //   ),
-                    // ),
                   ],
                 ),
               ),

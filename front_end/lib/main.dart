@@ -96,6 +96,9 @@ void main() async {
 //                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
 //                 ),
 //               ),
+
+
+
 //               const SizedBox(height: 20),
 //               SpeechToTextUltra(
 //                 ultraCallback: (String liveText, String finalText, bool isListening) {

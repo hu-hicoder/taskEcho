@@ -1,9 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart'; //ultraに変更
 import 'package:speech_to_text/speech_to_text.dart';
-// import 'package:speech_to_text_ultra/speech_to_text_ultra.dart';
+import 'package:speech_to_text_ultra/speech_to_text_ultra.dart';
 import 'dart:developer';
 
+
+// class SpeechToTextUltraProvider extends ChangeNotifier {
+//   bool _isListening = false;
+//   String _entireResponse = '';
+//   String _liveResponse = '';
+
+//   bool get isListening => _isListening;
+//   String get entireResponse => _entireResponse;
+//   String get liveResponse => _liveResponse;
+
+//   void updateResponses(String liveText, String finalText, bool isListening) {
+//     _liveResponse = liveText;
+//     _entireResponse = finalText;
+//     _isListening = isListening;
+//     notifyListeners(); // データ更新を通知
+//   }
+// }
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
   bool _speechEnabled = false;
