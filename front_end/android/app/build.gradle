@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.myapp"
+    namespace 'com.example.flutter_speech_to_text' // ここに namespace を追加
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
