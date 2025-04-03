@@ -11,6 +11,10 @@ import '../providers/classProvider.dart';
 import '../providers/textsDataProvider.dart';
 import '../providers/recognitionProvider.dart';
 import 'package:speech_to_text_ultra/speech_to_text_ultra.dart';
+import '../dialogs/settingDialog.dart';
+import '../dialogs/keywordSettingDialog.dart';
+import '../dialogs/classSettingDialog.dart';
+
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -32,17 +36,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   //bool canFlash = true; // フラグを追加
   bool existKeyword = false; // キーワードが存在するかのフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
-  List<String> keywords = [
-    "重要",
-    "大事",
-    "課題",
-    "提出",
-    "テスト",
-    "レポート",
-    "締め切り",
-    "期限",
-    "動作確認"
-  ];
   int currentIndex = 0; //要約とかの文章を受け取るリストのインデックスを管理する変数
   TextEditingController classController = TextEditingController();
   // 呼び出し済みのsummarizedTextsを追跡するセットを定義
@@ -290,235 +283,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     print("🛑 音声認識を停止しました");
   }
 
-  // void showSettingsDialog(BuildContext context) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return AlertDialog(
-  //         title: Text('設定'),
-  //         content: SingleChildScrollView(
-  //           child: ListBody(
-  //             children: <Widget>[
-  //               ElevatedButton(
-  //                 onPressed: () {
-  //                   Navigator.of(context).pop(); // 設定ダイアログを閉じる
-  //                   //showKeywordSettingDialog(context); // キーワード設定ダイアログを表示
-  //                 },
-  //                 style: ElevatedButton.styleFrom(
-  //                   backgroundColor: Colors.cyanAccent, // ボタンの背景色
-  //                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-  //                   shape: RoundedRectangleBorder(
-  //                     borderRadius: BorderRadius.circular(30),
-  //                   ),
-  //                 ),
-  //                 child: Text(
-  //                   'キーワードを設定',
-  //                   style: TextStyle(color: Colors.black),
-  //                 ),
-  //               ),
-  //               SizedBox(height: 20),
-  //               ElevatedButton(
-  //                 onPressed: () {
-  //                   Navigator.of(context).pop(); // 設定ダイアログを閉じる
-  //                   //showClassSettingDialog(context); // 授業設定ダイアログを表示
-  //                 },
-  //                 style: ElevatedButton.styleFrom(
-  //                   backgroundColor: Colors.cyanAccent, // ボタンの背景色
-  //                   padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-  //                   shape: RoundedRectangleBorder(
-  //                     borderRadius: BorderRadius.circular(30),
-  //                   ),
-  //                 ),
-  //                 child: Text(
-  //                   '授業の設定',
-  //                   style: TextStyle(color: Colors.black),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //         actions: <Widget>[
-  //           TextButton(
-  //             onPressed: () {
-  //               Navigator.of(context).pop(); // ダイアログを閉じる
-  //             },
-  //             child: Text('閉じる'),
-  //           ),
-  //         ],
-  //       );
-  //     },
-  //   );
-  // }
-
-  // // キーワード設定ダイアログを表示する関数
-  // void showKeywordSettingDialog(BuildContext context) {
-  //   final TextEditingController keywordController = TextEditingController();
-
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return StatefulBuilder(
-  //         builder: (context, setState) {
-  //           return AlertDialog(
-  //             title: Text('キーワードの設定'),
-  //             content: Container(
-  //               width: MediaQuery.of(context).size.width * 0.5,
-  //               child: Column(
-  //                 mainAxisSize: MainAxisSize.min,
-  //                 children: [
-  //                   // キーワードの一覧を表示
-  //                   Expanded(
-  //                     child: ListView.builder(
-  //                       shrinkWrap: true,
-  //                       itemCount: keywords.length,
-  //                       itemBuilder: (context, index) {
-  //                         return ListTile(
-  //                           title: Text(keywords[index]),
-  //                           trailing: IconButton(
-  //                             icon: Icon(Icons.delete, color: Colors.redAccent),
-  //                             onPressed: () {
-  //                               setState(() {
-  //                                 keywords.removeAt(index); // キーワードを削除
-  //                               });
-  //                             },
-  //                           ),
-  //                         );
-  //                       },
-  //                     ),
-  //                   ),
-  //                   TextField(
-  //                     controller: keywordController,
-  //                     decoration: InputDecoration(hintText: "新しいキーワードを入力"),
-  //                   ),
-  //                   SizedBox(height: 8), // テキストフィールドと注意書きの間にスペースを追加
-  //                   Align(
-  //                     alignment: Alignment.centerRight, //右寄せ
-  //                     child: Text(
-  //                       "※「保存」を押さなければ変更が反映されません",
-  //                       style: TextStyle(color: Colors.redAccent, fontSize: 12),
-  //                     ),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             actions: [
-  //               TextButton(
-  //                 onPressed: () {
-  //                   Navigator.of(context).pop(); // ダイアログを閉じる
-  //                 },
-  //                 child: Text("キャンセル"),
-  //               ),
-  //               TextButton(
-  //                 onPressed: () {
-  //                   // 新しいキーワードを追加
-  //                   setState(() {
-  //                     if (keywordController.text.isNotEmpty) {
-  //                       keywords.add(keywordController.text);
-  //                       keywordController.clear();
-  //                     }
-  //                   });
-  //                 },
-  //                 child: Text("追加"),
-  //               ),
-  //               TextButton(
-  //                 onPressed: () async {
-  //                   // キーワードを保存（バックエンドに送信）
-  //                   await sendKeywords();
-  //                   Navigator.of(context).pop(); // ダイアログを閉じる
-  //                 },
-  //                 child: Text("保存"),
-  //               ),
-  //             ],
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
-
-  // // 授業設定ダイアログを表示する関数
-  // void showClassSettingDialog(BuildContext context) {
-  //   final classProvider = Provider.of<ClassProvider>(context, listen: false);
-  //   showDialog(
-  //     context: context,
-  //     builder: (BuildContext context) {
-  //       return StatefulBuilder(
-  //         builder: (context, setState) {
-  //           return AlertDialog(
-  //             title: Text('授業の設定'),
-  //             content: Container(
-  //               height: MediaQuery.of(context).size.height * 0.6, // ダイアログの高さを指定
-  //               width: MediaQuery.of(context).size.width * 0.6,
-  //               child: Column(
-  //                 mainAxisSize: MainAxisSize.min,
-  //                 children: [
-  //                   //授業の削除
-  //                   SizedBox(height: 8),
-  //                   Expanded(
-  //                     child: SingleChildScrollView(
-  //                       child: Column(
-  //                         children: classProvider.classes.map((className) {
-  //                           return ListTile(
-  //                             title: Text(className),
-  //                             trailing: PopupMenuButton<String>(
-  //                               onSelected: (String result) {
-  //                                 if (result == '削除') {
-  //                                   setState(() {
-  //                                     classProvider.removeClass(className);
-  //                                   });
-  //                                 }
-  //                               },
-  //                               itemBuilder: (BuildContext context) =>
-  //                                   <PopupMenuEntry<String>>[
-  //                                 PopupMenuItem<String>(
-  //                                   value: '削除',
-  //                                   child: Text('削除'),
-  //                                   enabled: classProvider.selectedClass !=
-  //                                       className,
-  //                                 ),
-  //                               ],
-  //                             ),
-  //                           );
-  //                         }).toList(),
-  //                       ),
-  //                     ),
-  //                   ),
-  //                   //授業の追加
-  //                   SizedBox(height: 16),
-  //                   TextField(
-  //                     controller: classController,
-  //                     decoration: InputDecoration(hintText: "新しい授業を入力"),
-  //                   ),
-  //                 ],
-  //               ),
-  //             ),
-  //             actions: [
-  //               TextButton(
-  //                 onPressed: () {
-  //                   Navigator.of(context).pop();
-  //                 },
-  //                 child: Text("キャンセル"),
-  //               ),
-  //               TextButton(
-  //                 onPressed: () {
-  //                   setState(() {
-  //                     if (classController.text.isNotEmpty) {
-  //                       classProvider.addClass(classController.text);
-  //                       classController.clear();
-  //                     }
-  //                   });
-  //                   Navigator.of(context).pop();
-  //                 },
-  //                 child: Text("追加"),
-  //               ),
-  //             ],
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
-
   @override
   Widget build(BuildContext context) {
     final double cardHeight =
@@ -709,6 +473,25 @@ return BasePage(
                       }).toList(),
                     ),
                     SizedBox(height: 20),
+                    //設定ボタンの追加
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          showSettingsDialog(context); // 設定ダイアログを表示
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.cyanAccent, // ボタンの背景色
+                          padding: EdgeInsets.all(16), // アイコンの周りのパディング
+                          shape: CircleBorder(), // ボタンを円形にする
+                          elevation: 0, // 影を削除
+                        ),
+                        child: Icon(
+                          Icons.settings,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
