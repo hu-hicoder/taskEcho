@@ -73,7 +73,7 @@ class RecognitionProvider with ChangeNotifier {
   /// 音声認識の結果をリアルタイムで更新
   void _onSpeechResult(SpeechRecognitionResult result) async {
     print("onSpeechResult() が呼ばれました");
-    _lastWords += " " + result.recognizedWords;
+    _lastWords = " " + result.recognizedWords;
     print('onSpeechResult: $_lastWords');
     
     notifyListeners(); // UIを更新
