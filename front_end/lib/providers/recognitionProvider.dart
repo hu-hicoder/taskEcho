@@ -3,6 +3,7 @@ import 'package:speech_to_text/speech_recognition_result.dart'; //ultraに変更
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:speech_to_text_ultra/speech_to_text_ultra.dart';
 import 'dart:developer';
+import 'dart:async';
 
 
 // class SpeechToTextUltraProvider extends ChangeNotifier {
@@ -25,8 +26,9 @@ class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
   bool _speechEnabled = false;
   String _lastWords = '';
-  int resetRecognition = 200; // 認識文字数がこの値を超えたらリセット
+
   final SpeechToText _speechToText = SpeechToText();
+  Timer? _cacheClearTimer; // キャッシュクリア用のタイマー
 
   bool get isRecognizing => _isRecognizing;
   bool get speechEnabled => _speechEnabled;
@@ -34,6 +36,7 @@ class RecognitionProvider with ChangeNotifier {
 
   RecognitionProvider() {
     _initSpeech();
+    _startCacheClearTimer();
   }
 
   /// 初期化処理（アプリ起動時に1回だけ実行）
@@ -48,6 +51,27 @@ class RecognitionProvider with ChangeNotifier {
     );
     log('Speech recognition available: $_speechEnabled');
     notifyListeners(); // 状態が変わったことを通知
+  }
+    
+  /// キャッシュクリアタイマーを開始
+  void _startCacheClearTimer() {
+    _cacheClearTimer?.cancel(); // 既存のタイマーをキャンセル
+    _cacheClearTimer = Timer.periodic(Duration(minutes: 2), (timer) {
+      _clearCache();
+    });
+  }
+
+  /// キャッシュをクリアする
+  void _clearCache() {
+    print("キャッシュをクリアします");
+    _lastWords = ''; // 認識結果をリセット
+    notifyListeners(); // UIを更新
+
+        // 音声認識が停止していないか確認し、再開する
+    if (!_speechToText.isListening && _isRecognizing) {
+      print("キャッシュクリア後に音声認識を再開します...");
+      startListening(); // 音声認識を再開
+    }
   }
 
   /// 音声認識を開始（リアルタイム認識）
@@ -103,12 +127,11 @@ class RecognitionProvider with ChangeNotifier {
         if (_isRecognizing && !_speechToText.isListening) startListening(); // 🔥 停止中でなければ再開
       });
     }
-
-    // _lastWords が文字を超えた場合に音声認識を再起動
-    if (_lastWords.length > resetRecognition) {
-      await stopListening();
-      _lastWords = ''; // リセット
-      await startListening();
-    }
+  }
+  /// クラスが破棄されるときにタイマーをキャンセル
+  @override
+  void dispose() {
+    _cacheClearTimer?.cancel(); // タイマーを停止
+    super.dispose();
   }
 }
