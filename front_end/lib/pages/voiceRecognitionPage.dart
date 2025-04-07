@@ -15,7 +15,6 @@ import '../dialogs/settingDialog.dart';
 import '../dialogs/keywordSettingDialog.dart';
 import '../dialogs/classSettingDialog.dart';
 
-
 class VoiceRecognitionPage extends StatefulWidget {
   @override
   _VoiceRecognitionPageState createState() => _VoiceRecognitionPageState();
@@ -290,7 +289,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     final classProvider = Provider.of<ClassProvider>(context);
     final recognitionProvider = Provider.of<RecognitionProvider>(context);
 
-return BasePage(
+    return BasePage(
       body: Stack(
         children: [
           // グラデーション背景または点滅する背景の表示
@@ -331,18 +330,16 @@ return BasePage(
                                           ? summarizedTexts[0]
                                           : '',
                                       style: TextStyle(
-                                          fontSize: 20,
-                                          color: Colors.yellow),
+                                          fontSize: 20, color: Colors.yellow),
                                       textAlign: TextAlign.center,
                                     ),
                                     SizedBox(height: 20),
                                     Text(
-                                      recognizedTexts!=""
+                                      recognizedTexts != ""
                                           ? recognizedTexts
                                           : '',
                                       style: TextStyle(
-                                          fontSize: 24,
-                                          color: Colors.white),
+                                          fontSize: 24, color: Colors.white),
                                       textAlign: TextAlign.center,
                                     ),
                                     SizedBox(height: 20),
@@ -397,9 +394,10 @@ return BasePage(
                     ),
                     SizedBox(height: 20),
                     SpeechToTextUltra(
-                      ultraCallback: (String liveText, String finalText, bool isListening) {
+                      ultraCallback: (String liveText, String finalText,
+                          bool isListening) {
                         setState(() {
-                          if (!isListening) {
+                          /* if (!isListening) {
                             // finalTextが空なら、liveTextをmEntireResponseにセット
                             if (finalText.isNotEmpty) {
                               recognizedTexts = finalText;
@@ -409,7 +407,11 @@ return BasePage(
                           } else {
                             // リアルタイムのテキストを更新
                             recognizedTexts = liveText;
+                          } */
+                          if (isListening) {
+                            recognizedTexts = liveText;
                           }
+
                           mIsListening = isListening;
                           // ターミナルにデバッグ情報を表示
                           print("----- SpeechToTextUltra Callback -----");
@@ -420,8 +422,10 @@ return BasePage(
                           print("-------------------------------------");
                         });
                       },
-                      toPauseIcon: const Icon(Icons.stop, size: 50, color: Colors.red),
-                      toStartIcon: const Icon(Icons.mic, size: 50, color: Colors.green),
+                      toPauseIcon:
+                          const Icon(Icons.stop, size: 50, color: Colors.red),
+                      toStartIcon:
+                          const Icon(Icons.mic, size: 50, color: Colors.green),
                     ),
                     SizedBox(height: 20),
                     // キーワード表示
