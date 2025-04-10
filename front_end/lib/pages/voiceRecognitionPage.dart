@@ -310,8 +310,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   children: [
                     // 認識結果を表示するカード（縦に広く調整）
                     Column(
-                      children: List.generate(summarizedTexts.length, (index) {
-                        return GestureDetector(
+                      children: [
+                        GestureDetector(
                           onTap: () {
                             showDialog(
                               context: context,
@@ -321,7 +321,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                     child: Column(
                                       children: [
                                         Text(
-                                          summarizedTexts[index],
+                                          summarizedTexts[0], //一旦戦闘の要素を表示
                                           style: TextStyle(
                                               fontSize: 20,
                                               color: Colors.yellow),
@@ -329,7 +329,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                         ),
                                         SizedBox(height: 20),
                                         Text(
-                                          recognizedTexts[index],
+                                          recognizedTexts[0],
                                           style: TextStyle(
                                               fontSize: 24,
                                               color: Colors.white),
@@ -371,7 +371,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                               child: Column(
                                 children: [
                                   Text(
-                                    summarizedTexts[index],
+                                    summarizedTexts[0],
                                     style: TextStyle(
                                       fontSize: 24,
                                       color: Colors.white,
@@ -382,8 +382,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                               ),
                             ),
                           ),
-                        );
-                      }),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 20),
                     // 録音開始/停止ボタン（色と視認性の改善）
