@@ -1,27 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class KeywordProvider with ChangeNotifier {
-  List<String> _keywords = [
-    "重要",
-    "大事",
-    "課題",
-    "提出",
-    "テスト",
-    "レポート",
-    "締め切り",
-    "期限",
-    "動作確認"
-  ];
+  List<String> _keywords = [];
 
   List<String> get keywords => _keywords;
 
-  void addKeyword(String keyword) {
-    _keywords.add(keyword);
+  KeywordProvider() {
+    loadKeywords();
+  }
+
+  Future<void> loadKeywords() async {
+    final prefs = await SharedPreferences.getInstance();
+    _keywords = prefs.getStringList('keywords') ?? [];
     notifyListeners();
   }
 
-  void removeKeyword(int index) {
-    _keywords.removeAt(index);
+  Future<void> saveKeywords(List<String> keywords) async {
+    final prefs = await SharedPreferences.getInstance();
+    _keywords = keywords;
+    await prefs.setStringList('keywords', keywords);
     notifyListeners();
+  }
+
+  Future<List<String>> detectKeywords(String transcript) async {
+    return _keywords.where((k) => transcript.contains(k)).toList();
   }
 }

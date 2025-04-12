@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_recognition_result.dart'; 
+import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-
+import 'package:shared_preferences/shared_preferences.dart'; //ローカルにキーワードを保存するパッケージ
+import './keywordProvider.dart';
 import 'dart:developer';
 import 'dart:async';
-
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
@@ -23,6 +25,16 @@ class RecognitionProvider with ChangeNotifier {
     _startCacheClearTimer();
   }
 
+  Future<void> saveKeywords(List<String> keywords) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('keywords', keywords);
+  }
+
+  Future<List<String>> loadKeywords() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getStringList('keywords') ?? [];
+  }
+
   /// 初期化処理（アプリ起動時に1回だけ実行）
   Future<void> _initSpeech() async {
     _speechEnabled = await _speechToText.initialize(
@@ -36,7 +48,7 @@ class RecognitionProvider with ChangeNotifier {
     log('Speech recognition available: $_speechEnabled');
     notifyListeners(); // 状態が変わったことを通知
   }
-    
+
   /// キャッシュクリアタイマーを開始
   void _startCacheClearTimer() {
     _cacheClearTimer?.cancel(); // 既存のタイマーをキャンセル
@@ -51,7 +63,7 @@ class RecognitionProvider with ChangeNotifier {
     _lastWords = ''; // 認識結果をリセット
     notifyListeners(); // UIを更新
 
-        // 音声認識が停止していないか確認し、再開する
+    // 音声認識が停止していないか確認し、再開する
     if (!_speechToText.isListening && _isRecognizing) {
       print("キャッシュクリア後に音声認識を再開します...");
       startListening(); // 音声認識を再開
@@ -70,7 +82,6 @@ class RecognitionProvider with ChangeNotifier {
     if (available) {
       print("音声認識を開始します...");
       _isRecognizing = true; // 🔥 `true` に変更して UI を更新
-  
 
       await _speechToText.listen(
         onResult: _onSpeechResult,
@@ -102,16 +113,31 @@ class RecognitionProvider with ChangeNotifier {
     print("onSpeechResult() が呼ばれました");
     _lastWords = " " + result.recognizedWords;
     print('onSpeechResult: $_lastWords');
-  
+
     notifyListeners(); // UIを更新
 
     // もし認識が止まったら自動で再開
     if (!_speechToText.isListening && _isRecognizing) {
       Future.delayed(Duration(seconds: 1), () {
-        if (_isRecognizing && !_speechToText.isListening) startListening(); // 🔥 停止中でなければ再開
+        if (_isRecognizing && !_speechToText.isListening)
+          startListening(); // 🔥 停止中でなければ再開
       });
     }
+
+    // キーワードを探索する
+    final keywordProvider =
+        Provider.of<KeywordProvider>(context, listen: false);
+    List<String> keywords = keywordProvider.keywords;
+
+    List<String> matchedKeywords =
+        keywords.where((keyword) => _lastWords.contains(keyword)).toList();
+
+    if (matchedKeywords.isNotEmpty) {
+      String snippet = extractSnippetWithKeyword(_lastWords, matchedKeywords);
+      await _sendToBackend(snippet, matchedKeywords);
+    }
   }
+
   /// クラスが破棄されるときにタイマーをキャンセル
   @override
   void dispose() {
