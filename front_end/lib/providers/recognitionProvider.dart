@@ -7,6 +7,7 @@ import 'dart:developer';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
@@ -124,18 +125,34 @@ class RecognitionProvider with ChangeNotifier {
       });
     }
 
-    // キーワードを探索する
-    final keywordProvider =
-        Provider.of<KeywordProvider>(context, listen: false);
-    List<String> keywords = keywordProvider.keywords;
-
+    // キーワードを検出する
+    List<String> keywords = await loadKeywords();
     List<String> matchedKeywords =
         keywords.where((keyword) => _lastWords.contains(keyword)).toList();
 
     if (matchedKeywords.isNotEmpty) {
-      String snippet = extractSnippetWithKeyword(_lastWords, matchedKeywords);
-      await _sendToBackend(snippet, matchedKeywords);
+      print("検出されたキーワード: $matchedKeywords");
+      // ここでUIに通知するためにnotifyListenersを呼び出す
+      notifyListeners();
     }
+  }
+
+  // キーワードを含む文脈を抽出するメソッド
+  String extractSnippetWithKeyword(String text, List<String> keywords) {
+    // 最初に見つかったキーワードを使用
+    String keyword = keywords.first;
+    
+    // キーワードの位置を見つける
+    int keywordIndex = text.indexOf(keyword);
+    if (keywordIndex == -1) return text; // キーワードが見つからない場合は全文を返す
+    
+    // キーワードの前後の文脈を抽出（前後50文字ずつ）
+    int startIndex = (keywordIndex - 50) < 0 ? 0 : keywordIndex - 50;
+    int endIndex = (keywordIndex + keyword.length + 50) > text.length 
+                  ? text.length 
+                  : keywordIndex + keyword.length + 50;
+    
+    return text.substring(startIndex, endIndex);
   }
 
   /// クラスが破棄されるときにタイマーをキャンセル

@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../providers/classProvider.dart';
 import '../providers/textsDataProvider.dart';
 import '../providers/recognitionProvider.dart';
+import '../providers/keywordProvider.dart';
 import '../dialogs/settingDialog.dart';
 import '../dialogs/keywordSettingDialog.dart';
 import '../dialogs/classSettingDialog.dart';
@@ -20,44 +21,20 @@ class VoiceRecognitionPage extends StatefulWidget {
 }
 
 class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
-  //String recognizedText = "認識結果がここに表示されます";
-  //String summarizedText = "要約データがここに表示されます";
   List<String> recognizedTexts = ["認識結果1", "認識結果2", "認識結果3"];
   List<String> summarizedTexts = ["要約1", "要約2", "要約3"];
-  //bool isRecognizing = false;
-  String keyword = "授業中";
+  String keyword = "キーワード検出待機中";
+  List<String> detectedKeywords = [];
   Timer? timer;
   Timer? flashTimer;
   bool isFlashing = false; // 点滅フラグ
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
-  //bool canFlash = true; // フラグを追加
   bool existKeyword = false; // キーワードが存在するかのフラグ
   Color backgroundColor = Colors.indigoAccent; // 点滅中の背景色管理用
   int currentIndex = 0; //要約とかの文章を受け取るリストのインデックスを管理する変数
   TextEditingController classController = TextEditingController();
   // 呼び出し済みのsummarizedTextsを追跡するセットを定義
   Set<String> calledeventTime = {};
-
-  // //キーワードをapp.pyに送信
-  // Future<void> sendKeywords() async {
-  //   final response = await http.post(
-  //     Uri.parse('http://localhost:5000/set_keywords'),
-  //     headers: {'Content-Type': 'application/json'},
-  //     body: jsonEncode({'keywords': keywords}),
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     print("キーワードを送信しました");
-  //   } else {
-  //     print("キーワードの送信に失敗しました");
-  //   }
-  // }
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   sendKeywords(); // ウィジェットの初期化時にキーワードを送信
-  // }
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -67,6 +44,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         Provider.of<ClassProvider>(context, listen: false).selectedClass;
     final recognitionProvider =
         Provider.of<RecognitionProvider>(context, listen: false);
+    final keywordProvider =
+        Provider.of<KeywordProvider>(context, listen: false);
 
     try {
       // 🎙 認識結果を取得
@@ -76,7 +55,10 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         // 要約処理だけど今のところそのまま返す
         String newSummarizedText = newRecognizedText;
 
-        existKeyword = checkForKeyword(newRecognizedText);
+        // キーワード検出
+        List<String> keywords = keywordProvider.keywords;
+        detectedKeywords = keywords.where((k) => newRecognizedText.contains(k)).toList();
+        existKeyword = detectedKeywords.isNotEmpty;
 
         // 📝 Providerのデータを更新
         textsDataProvider.addRecognizedText(selectedClass, newRecognizedText);
@@ -98,6 +80,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
           // キーワードに応じて点滅処理を実行
           if (existKeyword) {
+            keyword = "検出: ${detectedKeywords.join(', ')}";
             startFlashing();
           } else {
             stopFlashing();
@@ -105,13 +88,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         });
 
         print('認識結果：${summarizedTexts[currentIndex]}');
-
-        // 📅 Googleカレンダー連携
-        // String? eventTime = await extractTime(newSummarizedText);
-        // if (eventTime != null && !calledeventTime.contains(eventTime)) {
-        //   await createEvent(eventTime, "授業予定");
-        //   calledeventTime.add(eventTime);
-        // }
       }
     } catch (e) {
       print('エラーが発生しました: $e');
@@ -121,9 +97,11 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     }
   }
 
-  // キーワード検出だけど動くように仮においてる
+  // キーワード検出
   bool checkForKeyword(String text) {
-    return text.contains("授業");
+    final keywordProvider = Provider.of<KeywordProvider>(context, listen: false);
+    List<String> keywords = keywordProvider.keywords;
+    return keywords.any((keyword) => text.contains(keyword));
   }
 
   // 点滅を開始する（keywordの状態によって切り替え）
@@ -150,90 +128,13 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     }
     isFlashing = false;
     flashTimer?.cancel();
-    keyword = "授業中"; // キーワードをリセット
+    keyword = "キーワード検出待機中"; // キーワードをリセット
     setState(() {
       showGradient = true; // 背景をグラデーションに戻す
     });
   }
 
-  // // 文字列から時刻情報を抽出する関数
-  // String? extractTime(String text) {
-  //   final timeRegExp = RegExp(r'(\d{1,2}:\d{2})');
-  //   final match = timeRegExp.firstMatch(text);
-  //   return match?.group(0);
-  // }
-
-  // gooラボの時刻情報正規化APIを呼び出す関数
-  // Future<String?> extractTime(String text) async {
-  //   final apiKey = dotenv.env['API_KEY']; // 環境変数からAPIキーを取得
-  //   print("=====extractTime=====");
-  //   if (apiKey == null) {
-  //     print('APIキーが設定されていません');
-  //     return null;
-  //   }
-
-  //   final url = Uri.parse('https://labs.goo.ne.jp/api/chrono');
-  //   final headers = {'Content-Type': 'application/json'};
-  //   final body = jsonEncode({'app_id': apiKey, 'sentence': text});
-
-  //   try {
-  //     print('Sending request to $url with body: $body');
-  //     final response = await http.post(url, headers: headers, body: body);
-  //     print('Received response with status code: ${response.statusCode}');
-  //     if (response.statusCode == 200) {
-  //       final data = jsonDecode(response.body);
-  //       print('Received data: $data');
-  //       if (data['datetime_list'] != null && data['datetime_list'].isNotEmpty) {
-  //         final datetime = data['datetime_list'][0][1].toString();
-  //         print('Extracted datetime: $datetime');
-  //         return datetime;
-  //       } else {
-  //         print('datetime_listが空です。');
-  //       }
-  //     } else {
-  //       print('時刻情報正規化APIの呼び出しに失敗しました。ステータスコード: ${response.statusCode}');
-  //       print('レスポンスボディ: ${response.body}');
-  //     }
-  //   } catch (e) {
-  //     print('エラーが発生しました: $e');
-  //     setState(() {
-  //       recognizedTexts[currentIndex] = "データ取得エラー";
-  //     });
-  //   }
-  //   print("==========");
-  //   return null;
-  // }
-
-  // // GoogleカレンダーのURLを生成する関数
-  // Future<void> createEvent(String eventTime, String currentIndex) async {
-  //   try {
-  //     final url = Uri.parse('http://localhost:5000/create_event');
-  //     final response = await http.post(
-  //       url,
-  //       headers: {'Content-Type': 'application/json'},
-  //       body: jsonEncode({
-  //         'eventTime': eventTime,
-  //         'currentIndex': currentIndex,
-  //       }),
-  //     );
-  //     print("=====createEvent=====");
-  //     if (response.statusCode == 200) {
-  //       // 成功時の処理
-  //       print('Event created successfully');
-  //     } else {
-  //       // エラーハンドリング
-  //       print(
-  //           'Failed to create event with status code: ${response.statusCode}');
-  //       print('Response body: ${response.body}');
-  //     }
-  //   } catch (e) {
-  //     // ネットワークエラーやその他の例外をキャッチ
-  //     print('An error occurred: $e');
-  //   }
-  //   print("==========");
-  // }
-
-// 音声認識の開始
+  // 音声認識の開始
   Future<void> startRecording() async {
     final recognitionProvider =
         Provider.of<RecognitionProvider>(context, listen: false);
@@ -270,7 +171,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     recognitionProvider.stopListening(); // 音声認識を停止
     timer?.cancel(); // タイマーを停止
     stopFlashing(); // 点滅停止
-    keyword = "授業中"; // キーワードをリセット
+    keyword = "キーワード検出待機中"; // キーワードをリセット
 
     print("🛑 音声認識を停止しました");
   }
@@ -281,6 +182,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         MediaQuery.of(context).size.height / 6; // 画面の高さの1/6
     final classProvider = Provider.of<ClassProvider>(context);
     final recognitionProvider = Provider.of<RecognitionProvider>(context);
+    final keywordProvider = Provider.of<KeywordProvider>(context);
 
     return BasePage(
       body: Stack(
@@ -432,15 +334,69 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                           ),
                         ],
                       ),
-                      child: Text(
-                        keyword,
-                        style: TextStyle(
-                          fontSize: 24,
-                          color: (keyword == "授業中")
-                              ? Colors.greenAccent
-                              : Colors.redAccent,
-                        ),
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        children: [
+                          Text(
+                            keyword,
+                            style: TextStyle(
+                              fontSize: 24,
+                              color: existKeyword
+                                  ? Colors.redAccent
+                                  : Colors.greenAccent,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          SizedBox(height: 10),
+                          // 登録済みキーワード一覧
+                          if (keywordProvider.keywords.isNotEmpty)
+                            Container(
+                              padding: EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.black38,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "登録キーワード:",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                  Wrap(
+                                    spacing: 8,
+                                    children: keywordProvider.keywords
+                                        .map((k) => Chip(
+                                              label: Text(k),
+                                              backgroundColor: Colors.blueGrey,
+                                              labelStyle: TextStyle(color: Colors.white),
+                                            ))
+                                        .toList(),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          SizedBox(height: 10),
+                          // キーワード設定ボタンを追加
+                          ElevatedButton(
+                            onPressed: () {
+                              showKeywordSettingDialog(context); // キーワード設定ダイアログを表示
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blueAccent,
+                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                            ),
+                            child: Text(
+                              'キーワード設定',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(height: 20),
