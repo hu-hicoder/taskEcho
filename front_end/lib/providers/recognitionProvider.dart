@@ -84,7 +84,7 @@ class RecognitionProvider with ChangeNotifier {
       _isRecognizing = true; // 🔥 `true` に変更して UI を更新
 
       await _speechToText.listen(
-        onResult: _onSpeechResult,
+        onResult: (result) => _onSpeechResult(result),
         partialResults: true,
         localeId: "ja_JP",
         listenMode: ListenMode.dictation,
@@ -119,22 +119,53 @@ class RecognitionProvider with ChangeNotifier {
     // もし認識が止まったら自動で再開
     if (!_speechToText.isListening && _isRecognizing) {
       Future.delayed(Duration(seconds: 1), () {
-        if (_isRecognizing && !_speechToText.isListening)
+        if (_isRecognizing && !_speechToText.isListening) {
           startListening(); // 🔥 停止中でなければ再開
+        }
       });
     }
 
-    // キーワードを探索する
-    final keywordProvider =
-        Provider.of<KeywordProvider>(context, listen: false);
-    List<String> keywords = keywordProvider.keywords;
+    // キーワードの検出はVoiceRecognitionPageで行うため、ここでは何もしない
+    // UIコンポーネントでKeywordProviderを使用して検出する
+  }
 
-    List<String> matchedKeywords =
-        keywords.where((keyword) => _lastWords.contains(keyword)).toList();
+  /// テキストからキーワードを含む部分の前後の文脈を抽出する
+  String extractSnippetWithKeyword(String text, List<String> keywords) {
+    // 最初に見つかったキーワードを使用
+    String keyword = keywords.first;
 
-    if (matchedKeywords.isNotEmpty) {
-      String snippet = extractSnippetWithKeyword(_lastWords, matchedKeywords);
-      await _sendToBackend(snippet, matchedKeywords);
+    // キーワードの位置を見つける
+    int keywordIndex = text.indexOf(keyword);
+    if (keywordIndex == -1) return text; // キーワードが見つからない場合は全文を返す
+
+    // 前後の文脈を含めるための範囲を計算（前後50文字程度）
+    int startIndex = (keywordIndex - 50) < 0 ? 0 : keywordIndex - 50;
+    int endIndex = (keywordIndex + keyword.length + 50) > text.length
+        ? text.length
+        : keywordIndex + keyword.length + 50;
+
+    return text.substring(startIndex, endIndex);
+  }
+
+  /// バックエンドにデータを送信する
+  Future<void> _sendToBackend(String snippet, List<String> keywords) async {
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:5000/process_text'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'text': snippet,
+          'keywords': keywords,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('バックエンドにデータを送信しました: $snippet');
+      } else {
+        print('バックエンドへのデータ送信に失敗しました: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('バックエンドへのデータ送信中にエラーが発生しました: $e');
     }
   }
 

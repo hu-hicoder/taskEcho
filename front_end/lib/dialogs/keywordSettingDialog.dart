@@ -32,7 +32,7 @@ void showKeywordSettingDialog(BuildContext context) {
                                     Icon(Icons.delete, color: Colors.redAccent),
                                 onPressed: () {
                                   keywordProvider
-                                      .removeKeyword(index); //キーワードの削除
+                                      .deleteKeywords(index); //キーワードの削除
                                 },
                               ),
                             );
