@@ -7,6 +7,9 @@ import 'providers/classProvider.dart';
 import 'providers/keywordProvider.dart';
 import 'providers/textsDataProvider.dart';
 import 'providers/recognitionProvider.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -26,6 +29,14 @@ class SpeechToTextApp extends StatelessWidget {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
   //await dotenv.load(fileName: ".env");
+
+  // SQLiteの初期化（Web用）
+  if (kIsWeb) {
+    // Webプラットフォームの場合、SQLite FFI Webを使用
+    databaseFactory = databaseFactoryFfiWeb;
+    print('SQLite Web initialized');
+  }
+
   runApp(
     MultiProvider(
       providers: [

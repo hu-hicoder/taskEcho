@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../utils/database_helper.dart';
 
 class KeywordProvider with ChangeNotifier {
   List<String> _keywords = [];
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   List<String> get keywords => _keywords;
 
@@ -29,26 +30,34 @@ class KeywordProvider with ChangeNotifier {
   }
 
   Future<void> loadKeywords() async {
-    final prefs = await SharedPreferences.getInstance();
-    _keywords = prefs.getStringList('keywords') ?? [];
-    notifyListeners();
+    try {
+      _keywords = await _dbHelper.getKeywords();
+      notifyListeners();
+    } catch (e) {
+      print('キーワードの読み込み中にエラーが発生しました: $e');
+    }
   }
 
   Future<void> saveKeywords(List<String> keywords) async {
-    final prefs = await SharedPreferences.getInstance();
-    _keywords = keywords;
-    await prefs.setStringList('keywords', keywords);
-    notifyListeners();
+    try {
+      _keywords = keywords;
+      await _dbHelper.saveKeywords(keywords);
+      notifyListeners();
+    } catch (e) {
+      print('キーワードの保存中にエラーが発生しました: $e');
+    }
   }
 
-  Future<void> addKeyword(String keyword) async {
-    final prefs = await SharedPreferences.getInstance();
-
+  Future<void> addKeywords(String keyword) async {
     // キーワードが既に存在しない場合のみ追加
     if (!_keywords.contains(keyword)) {
-      _keywords.add(keyword); // 新しいキーワードをリストに追加
-      await prefs.setStringList('keywords', _keywords); // 更新後のリストを保存
-      notifyListeners(); // リスナーに変更を通知
+      try {
+        await _dbHelper.insertKeyword(keyword);
+        _keywords.add(keyword); // 新しいキーワードをリストに追加
+        notifyListeners(); // リスナーに変更を通知
+      } catch (e) {
+        print('キーワードの追加中にエラーが発生しました: $e');
+      }
     } else {
       print('キーワード "$keyword" は既に存在します');
     }
@@ -59,15 +68,49 @@ class KeywordProvider with ChangeNotifier {
   }
 
   Future<void> deleteKeywords(int index) async {
-    final prefs = await SharedPreferences.getInstance();
-
     // インデックスが有効か確認
     if (index >= 0 && index < _keywords.length) {
-      _keywords.removeAt(index); // 指定されたインデックスの要素を削除
-      await prefs.setStringList('keywords', _keywords); // 更新後のリストを保存
-      notifyListeners(); // リスナーに変更を通知
+      try {
+        String keyword = _keywords[index];
+        await _dbHelper.deleteKeyword(keyword);
+        _keywords.removeAt(index); // 指定されたインデックスの要素を削除
+        notifyListeners(); // リスナーに変更を通知
+      } catch (e) {
+        print('キーワードの削除中にエラーが発生しました: $e');
+      }
     } else {
       print('無効なインデックス: $index');
+    }
+  }
+
+  // キーワード検出履歴を保存
+  Future<void> saveKeywordDetection(
+      String keyword, String className, String contextText) async {
+    try {
+      await _dbHelper.saveKeywordDetection(keyword, className, contextText);
+    } catch (e) {
+      print('キーワード検出履歴の保存中にエラーが発生しました: $e');
+    }
+  }
+
+  // 特定の授業のキーワード検出履歴を取得
+  Future<List<Map<String, dynamic>>> getKeywordDetectionsByClass(
+      String className) async {
+    try {
+      return await _dbHelper.getKeywordDetectionsByClass(className);
+    } catch (e) {
+      print('キーワード検出履歴の取得中にエラーが発生しました: $e');
+      return [];
+    }
+  }
+
+  // 全てのキーワード検出履歴を取得
+  Future<List<Map<String, dynamic>>> getAllKeywordDetections() async {
+    try {
+      return await _dbHelper.getKeywordDetections();
+    } catch (e) {
+      print('キーワード検出履歴の取得中にエラーが発生しました: $e');
+      return [];
     }
   }
 }

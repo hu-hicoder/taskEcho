@@ -27,6 +27,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   List<String> detectedKeywords = [];
   Timer? timer;
   Timer? flashTimer;
+  Timer? autoResetTimer; // 10秒後に自動的に画面変化を解除するタイマー
   bool isFlashing = false; // 点滅フラグ
   bool showGradient = true; // デフォルトの背景をグラデーションに戻すためのフラグ
   bool existKeyword = false; // キーワードが存在するかのフラグ
@@ -35,6 +36,28 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   TextEditingController classController = TextEditingController();
   // 呼び出し済みのsummarizedTextsを追跡するセットを定義
   Set<String> calledeventTime = {};
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    flashTimer?.cancel();
+    autoResetTimer?.cancel();
+    super.dispose();
+  }
+
+  // キーワードの周辺テキストを抽出する関数（前後100文字）
+  String extractContextText(String text, String keyword) {
+    int keywordIndex = text.indexOf(keyword);
+    if (keywordIndex == -1) return text;
+
+    // 前後100文字を抽出（合計約200文字）
+    int startIndex = (keywordIndex - 100) < 0 ? 0 : keywordIndex - 100;
+    int endIndex = (keywordIndex + keyword.length + 100) > text.length
+        ? text.length
+        : keywordIndex + keyword.length + 100;
+
+    return text.substring(startIndex, endIndex);
+  }
 
   // サーバーからデータを取得する関数
   Future<void> fetchRecognizedText() async {
@@ -57,7 +80,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
         // キーワード検出
         List<String> keywords = keywordProvider.keywords;
-        detectedKeywords = keywords.where((k) => newRecognizedText.contains(k)).toList();
+        detectedKeywords =
+            keywords.where((k) => newRecognizedText.contains(k)).toList();
         existKeyword = detectedKeywords.isNotEmpty;
 
         // 📝 Providerのデータを更新
@@ -82,6 +106,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           if (existKeyword) {
             keyword = "検出: ${detectedKeywords.join(', ')}";
             startFlashing();
+
+            // キーワードごとに周辺テキストを抽出してSQLiteに保存
+            for (String detectedKeyword in detectedKeywords) {
+              String contextText =
+                  extractContextText(newRecognizedText, detectedKeyword);
+              keywordProvider.saveKeywordDetection(
+                  detectedKeyword, selectedClass, contextText);
+              print('キーワード "$detectedKeyword" を検出: $contextText');
+            }
           } else {
             stopFlashing();
           }
@@ -99,7 +132,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // キーワード検出
   bool checkForKeyword(String text) {
-    final keywordProvider = Provider.of<KeywordProvider>(context, listen: false);
+    final keywordProvider =
+        Provider.of<KeywordProvider>(context, listen: false);
     List<String> keywords = keywordProvider.keywords;
     return keywords.any((keyword) => text.contains(keyword));
   }
@@ -109,6 +143,12 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     if (!isFlashing) {
       isFlashing = true;
       showGradient = false; // 点滅中はグラデーションを非表示に
+
+      // 既存のタイマーをキャンセル
+      flashTimer?.cancel();
+      autoResetTimer?.cancel();
+
+      // 点滅タイマーを開始
       flashTimer = Timer.periodic(Duration(milliseconds: 500), (Timer t) {
         setState(() {
           // 交互に赤と白を切り替える
@@ -116,6 +156,11 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
               ? Colors.white
               : Colors.redAccent;
         });
+      });
+
+      // 10秒後に自動的に点滅を停止するタイマーを設定
+      autoResetTimer = Timer(Duration(seconds: 10), () {
+        stopFlashing();
       });
     }
   }
@@ -371,7 +416,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                         .map((k) => Chip(
                                               label: Text(k),
                                               backgroundColor: Colors.blueGrey,
-                                              labelStyle: TextStyle(color: Colors.white),
+                                              labelStyle: TextStyle(
+                                                  color: Colors.white),
                                             ))
                                         .toList(),
                                   ),
@@ -382,11 +428,13 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                           // キーワード設定ボタンを追加
                           ElevatedButton(
                             onPressed: () {
-                              showKeywordSettingDialog(context); // キーワード設定ダイアログを表示
+                              showKeywordSettingDialog(
+                                  context); // キーワード設定ダイアログを表示
                             },
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.blueAccent,
-                              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(20),
                               ),
