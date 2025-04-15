@@ -7,6 +7,7 @@ import 'dart:developer';
 import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;

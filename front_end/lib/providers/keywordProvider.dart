@@ -12,6 +12,22 @@ class KeywordProvider with ChangeNotifier {
     loadKeywords();
   }
 
+  // キーワードを追加するメソッド
+  Future<void> addKeyword(String keyword) async {
+    if (!_keywords.contains(keyword)) {
+      _keywords.add(keyword);
+      await saveKeywords(_keywords);
+    }
+  }
+
+  // キーワードを削除するメソッド
+  Future<void> removeKeyword(int index) async {
+    if (index >= 0 && index < _keywords.length) {
+      _keywords.removeAt(index);
+      await saveKeywords(_keywords);
+    }
+  }
+
   Future<void> loadKeywords() async {
     final prefs = await SharedPreferences.getInstance();
     _keywords = prefs.getStringList('keywords') ?? [];
