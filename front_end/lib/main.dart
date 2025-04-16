@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speech_to_text/pages/voiceRecognitionPage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart'; // providerをインポート
-import 'providers/MordalProvider.dart';
+import 'providers/mordalProvider.dart';
 import 'providers/classProvider.dart';
 import 'providers/keywordProvider.dart';
 import 'providers/textsDataProvider.dart';
 import 'providers/recognitionProvider.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+
+// Web用のSQLite設定（条件付きインポート）
+import 'dart:async';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -30,11 +31,19 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
   //await dotenv.load(fileName: ".env");
 
-  // SQLiteの初期化（Web用）
+  // SQLiteの初期化
+  // Webプラットフォームの場合のみ特別な初期化が必要
+  // モバイルプラットフォームでは標準のSQLiteが使用される
   if (kIsWeb) {
-    // Webプラットフォームの場合、SQLite FFI Webを使用
-    databaseFactory = databaseFactoryFfiWeb;
-    print('SQLite Web initialized');
+    try {
+      print('Web platform detected, but skipping special SQLite initialization');
+      // Web用のSQLite初期化は必要な場合のみ有効化
+      // initWebSqlite();
+    } catch (e) {
+      print('SQLite initialization error: $e');
+    }
+  } else {
+    print('Using default SQLite implementation for mobile');
   }
 
   runApp(

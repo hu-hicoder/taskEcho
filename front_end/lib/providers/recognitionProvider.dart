@@ -8,6 +8,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
@@ -38,16 +39,29 @@ class RecognitionProvider with ChangeNotifier {
 
   /// 初期化処理（アプリ起動時に1回だけ実行）
   Future<void> _initSpeech() async {
-    _speechEnabled = await _speechToText.initialize(
-      onStatus: (status) {
-        print("SpeechToTextのステータス: $status");
-      },
-      onError: (error) {
-        print("SpeechToTextのエラー: $error"); // ← エラーを確認
-      },
-    );
-    log('Speech recognition available: $_speechEnabled');
-    notifyListeners(); // 状態が変わったことを通知
+    try {
+      // マイク権限をリクエスト
+      var status = await Permission.microphone.request();
+      if (status.isGranted) {
+        _speechEnabled = await _speechToText.initialize(
+          onStatus: (status) {
+            print("SpeechToTextのステータス: $status");
+          },
+          onError: (error) {
+            print("SpeechToTextのエラー: $error"); // ← エラーを確認
+          },
+        );
+        log('Speech recognition available: $_speechEnabled');
+      } else {
+        log('Microphone permission denied');
+        _speechEnabled = false;
+      }
+      notifyListeners(); // 状態が変わったことを通知
+    } catch (e) {
+      log('Error initializing speech: $e');
+      _speechEnabled = false;
+      notifyListeners();
+    }
   }
 
   /// キャッシュクリアタイマーを開始
@@ -73,27 +87,31 @@ class RecognitionProvider with ChangeNotifier {
 
   /// 音声認識を開始（リアルタイム認識）
   Future<void> startListening() async {
-    if (!_speechEnabled) {
-      print("音声認識が使用できません");
-      return;
-    }
+    try {
+      if (!_speechEnabled) {
+        print("音声認識が使用できません");
+        // 再度初期化を試みる
+        await _initSpeech();
+        if (!_speechEnabled) {
+          return;
+        }
+      }
 
-    bool available = await _speechToText.initialize();
-
-    if (available) {
       print("音声認識を開始します...");
       _isRecognizing = true; // 🔥 `true` に変更して UI を更新
+      notifyListeners();
 
       await _speechToText.listen(
-        onResult: (result) => _onSpeechResult(result),
+        onResult: _onSpeechResult,
         partialResults: true,
         localeId: "ja_JP",
         listenMode: ListenMode.dictation,
       );
-      notifyListeners();
       print("SpeechToText のリスニング開始");
-    } else {
-      print("SpeechToText の初期化に失敗");
+    } catch (e) {
+      print("音声認識の開始中にエラーが発生しました: $e");
+      _isRecognizing = false;
+      notifyListeners();
     }
   }
 
