@@ -37,6 +37,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   TextEditingController classController = TextEditingController();
   // 呼び出し済みのsummarizedTextsを追跡するセットを定義
   Set<String> calledeventTime = {};
+  int maxWords = 100; // 最大文字数を設定
 
   // //キーワードをapp.pyに送信
   // Future<void> sendKeywords() async {
@@ -74,9 +75,19 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
       if (newRecognizedText.isNotEmpty) {
         // 要約処理だけど今のところそのまま返す
-        String newSummarizedText = newRecognizedText;
+        // String newSummarizedText = newRecognizedText;
+        String newSummarizedText = "";
+
+        print('認識結果：${newRecognizedText}');
 
         existKeyword = checkForKeyword(newRecognizedText);
+
+        if (newRecognizedText.length > maxWords) {
+          // print("文字数が${maxWords}を超えています。切り取ります。");
+          newRecognizedText = newRecognizedText.substring(
+              newRecognizedText.length - maxWords,
+              newRecognizedText.length); // 指定した文字数で切る
+        }
 
         // 📝 Providerのデータを更新
         textsDataProvider.addRecognizedText(selectedClass, newRecognizedText);
@@ -103,8 +114,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             stopFlashing();
           }
         });
-
-        print('認識結果：${summarizedTexts[currentIndex]}');
 
         // 📅 Googleカレンダー連携
         // String? eventTime = await extractTime(newSummarizedText);
@@ -321,7 +330,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                     child: Column(
                                       children: [
                                         Text(
-                                          summarizedTexts[0], //一旦戦闘の要素を表示
+                                          // summarizedTexts[0], //一旦戦闘の要素を表示
+                                          recognizedTexts[0], //一旦要約はなくす
                                           style: TextStyle(
                                               fontSize: 20,
                                               color: Colors.yellow),
@@ -371,7 +381,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                               child: Column(
                                 children: [
                                   Text(
-                                    summarizedTexts[0],
+                                    // summarizedTexts[0],
+                                    recognizedTexts[0], //一旦要約はなくす
                                     style: TextStyle(
                                       fontSize: 24,
                                       color: Colors.white,
