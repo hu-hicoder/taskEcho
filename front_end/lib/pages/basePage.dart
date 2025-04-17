@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/MordalProvider.dart';
+import '../providers/mordalProvider.dart';
 import 'summaryPage.dart';
 //import 'taskManagementPage.dart';
 //import 'settingPage.dart';
