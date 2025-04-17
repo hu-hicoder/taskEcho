@@ -81,14 +81,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
-  dart_webrtc:
+  dev_build:
     dependency: transitive
     description:
-      name: dart_webrtc
-      sha256: "8565f1f1f412b8a6fd862f3a157560811e61eeeac26741c735a5d2ff409a0202"
+      name: dev_build
+      sha256: "6cb4c65446aedd671ffdaacbede599b6fb9c462b17d006f11f7b82fe90706bff"
       url: "https://pub.dev"
     source: hosted
-    version: "1.5.3"
+    version: "1.1.1+8"
   fake_async:
     dependency: transitive
     description:
@@ -153,6 +153,15 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.22.0"
+    version: "2.1.3"
+  file:
+    dependency: transitive
+    description:
+      name: file
+      sha256: a3b4f84adafef897088c160faf7dfffb7696046cb13ae90b508c2cbc95d3b8d4
+      url: "https://pub.dev"
+    source: hosted
+    version: "7.0.1"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -328,14 +337,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.0.0"
-  logging:
-    dependency: transitive
-    description:
-      name: logging
-      sha256: c8245ada5f1717ed44271ed1c26b8ce85ca3228fd2ffdb75468ab01979309d61
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.3.0"
   matcher:
     dependency: transitive
     description:
@@ -369,7 +370,7 @@ packages:
     source: hosted
     version: "1.0.0"
   path:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path
       sha256: "75cca69d1490965be98c73ceaea117e8a04dd21217b37b292c9ddbec0d955bc5"
@@ -377,7 +378,7 @@ packages:
     source: hosted
     version: "1.9.1"
   path_provider:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: path_provider
       sha256: "50c5dd5b6e1aaf6fb3a78b33f6aa3afca52bf903a8a5298f53101fdaee55bbcd"
@@ -496,6 +497,22 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.8"
+  pool:
+    dependency: transitive
+    description:
+      name: pool
+      sha256: "20fe868b6314b322ea036ba325e6fc0711a22948856475e2c2b6306e8ab39c2a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.5.1"
+  process_run:
+    dependency: transitive
+    description:
+      name: process_run
+      sha256: a68fa9727392edad97a2a96a77ce8b0c17d28336ba1b284b1dfac9595a4299ea
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.2+1"
   provider:
     dependency: "direct main"
     description:
@@ -504,6 +521,70 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.1.4"
+  pub_semver:
+    dependency: transitive
+    description:
+      name: pub_semver
+      sha256: "5bfcf68ca79ef689f8990d1160781b4bad40a3bd5e5218ad4076ddb7f4081585"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.0"
+  shared_preferences:
+    dependency: "direct main"
+    description:
+      name: shared_preferences
+      sha256: "6e8bf70b7fef813df4e9a36f658ac46d107db4b4cfe1048b477d4e453a8159f5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.3"
+  shared_preferences_android:
+    dependency: transitive
+    description:
+      name: shared_preferences_android
+      sha256: "9f9f3d372d4304723e6136663bb291c0b93f5e4c8a4a6314347f481a33bda2b1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.7"
+  shared_preferences_foundation:
+    dependency: transitive
+    description:
+      name: shared_preferences_foundation
+      sha256: "6a52cfcdaeac77cad8c97b539ff688ccfc458c007b4db12be584fbe5c0e49e03"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.4"
+  shared_preferences_linux:
+    dependency: transitive
+    description:
+      name: shared_preferences_linux
+      sha256: "580abfd40f415611503cae30adf626e6656dfb2f0cee8f465ece7b6defb40f2f"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1"
+  shared_preferences_platform_interface:
+    dependency: transitive
+    description:
+      name: shared_preferences_platform_interface
+      sha256: "57cbf196c486bc2cf1f02b85784932c6094376284b3ad5779d1b1c6c6a816b80"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1"
+  shared_preferences_web:
+    dependency: transitive
+    description:
+      name: shared_preferences_web
+      sha256: c49bd060261c9a3f0ff445892695d6212ff603ef3115edbb448509d407600019
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.3"
+  shared_preferences_windows:
+    dependency: transitive
+    description:
+      name: shared_preferences_windows
+      sha256: "94ef0f72b2d71bc3e700e025db3710911bd51a71cefb65cc609dd0d9a982e3c1"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1"
   sky_engine:
     dependency: transitive
     description: flutter
@@ -518,21 +599,13 @@ packages:
     source: hosted
     version: "1.10.1"
   speech_to_text:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: speech_to_text
-      sha256: "57fef1d41bdebe298e84842c89bb4ac91f31cdbec7830c8cb1fc6b91d03abd42"
+      sha256: "6cf8f284997490ebef1d68f8707bef57dcf083f43c0f915cc285428520bfe6be"
       url: "https://pub.dev"
     source: hosted
-    version: "6.6.0"
-  speech_to_text_macos:
-    dependency: transitive
-    description:
-      name: speech_to_text_macos
-      sha256: e685750f7542fcaa087a5396ee471e727ec648bf681f4da83c84d086322173f6
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.1.0"
+    version: "7.0.0"
   speech_to_text_platform_interface:
     dependency: transitive
     description:
@@ -541,14 +614,70 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
-  speech_to_text_ultra:
+  sqflite:
     dependency: "direct main"
     description:
-      name: speech_to_text_ultra
-      sha256: "14ea9d281f7ce25c068f11754e2163cf9277bc064734267794daf359a7c9274c"
+      name: sqflite
+      sha256: "2d7299468485dca85efeeadf5d38986909c5eb0cd71fd3db2c2f000e6c9454bb"
       url: "https://pub.dev"
     source: hosted
-    version: "0.0.3"
+    version: "2.4.1"
+  sqflite_android:
+    dependency: transitive
+    description:
+      name: sqflite_android
+      sha256: "78f489aab276260cdd26676d2169446c7ecd3484bbd5fead4ca14f3ed4dd9ee3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
+  sqflite_common:
+    dependency: transitive
+    description:
+      name: sqflite_common
+      sha256: "761b9740ecbd4d3e66b8916d784e581861fd3c3553eda85e167bc49fdb68f709"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.5.4+6"
+  sqflite_common_ffi:
+    dependency: transitive
+    description:
+      name: sqflite_common_ffi
+      sha256: "883dd810b2b49e6e8c3b980df1829ef550a94e3f87deab5d864917d27ca6bf36"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.4+4"
+  sqflite_common_ffi_web:
+    dependency: "direct main"
+    description:
+      name: sqflite_common_ffi_web
+      sha256: "61ea702e7aba727f28be7ead00b84c19c745cd4a4934d0c41473303df11ac9ea"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.4.5+4"
+  sqflite_darwin:
+    dependency: transitive
+    description:
+      name: sqflite_darwin
+      sha256: "22adfd9a2c7d634041e96d6241e6e1c8138ca6817018afc5d443fef91dcefa9c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.1+1"
+  sqflite_platform_interface:
+    dependency: transitive
+    description:
+      name: sqflite_platform_interface
+      sha256: "8dd4515c7bdcae0a785b0062859336de775e8c65db81ae33dd5445f35be61920"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.4.0"
+  sqlite3:
+    dependency: transitive
+    description:
+      name: sqlite3
+      sha256: "310af39c40dd0bb2058538333c9d9840a2725ae0b9f77e4fd09ad6696aa8f66e"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.7.5"
   stack_trace:
     dependency: transitive
     description:
@@ -709,6 +838,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.1.0"
+  yaml:
+    dependency: transitive
+    description:
+      name: yaml
+      sha256: b9da305ac7c39faa3f030eccd175340f968459dae4af175130b3fc47e40d76ce
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.3"
 sdks:
   dart: ">=3.7.0 <4.0.0"
   flutter: ">=3.24.0"
