@@ -36,6 +36,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   TextEditingController classController = TextEditingController();
   // 呼び出し済みのsummarizedTextsを追跡するセットを定義
   Set<String> calledeventTime = {};
+  int maxWords = 100; // 最大文字数を設定
 
   @override
   void dispose() {
@@ -76,13 +77,23 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
       if (newRecognizedText.isNotEmpty) {
         // 要約処理だけど今のところそのまま返す
-        String newSummarizedText = newRecognizedText;
+        // String newSummarizedText = newRecognizedText;
+        String newSummarizedText = "";
+
+        print('認識結果：${newRecognizedText}');
 
         // キーワード検出
         List<String> keywords = keywordProvider.keywords;
         detectedKeywords =
             keywords.where((k) => newRecognizedText.contains(k)).toList();
         existKeyword = detectedKeywords.isNotEmpty;
+
+        if (newRecognizedText.length > maxWords) {
+          // print("文字数が${maxWords}を超えています。切り取ります。");
+          newRecognizedText = newRecognizedText.substring(
+              newRecognizedText.length - maxWords,
+              newRecognizedText.length); // 指定した文字数で切る
+        }
 
         // 📝 Providerのデータを更新
         textsDataProvider.addRecognizedText(selectedClass, newRecognizedText);
@@ -120,7 +131,9 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           }
         });
 
+
         print('認識結果：${summarizedTexts[currentIndex]}');
+
       }
     } catch (e) {
       print('エラーが発生しました: $e');
@@ -257,8 +270,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   children: [
                     // 認識結果を表示するカード（縦に広く調整）
                     Column(
-                      children: List.generate(summarizedTexts.length, (index) {
-                        return GestureDetector(
+                      children: [
+                        GestureDetector(
                           onTap: () {
                             showDialog(
                               context: context,
@@ -268,7 +281,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                     child: Column(
                                       children: [
                                         Text(
-                                          summarizedTexts[index],
+                                          // summarizedTexts[0], //一旦戦闘の要素を表示
+                                          recognizedTexts[0], //一旦要約はなくす
                                           style: TextStyle(
                                               fontSize: 20,
                                               color: Colors.yellow),
@@ -276,7 +290,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                         ),
                                         SizedBox(height: 20),
                                         Text(
-                                          recognizedTexts[index],
+                                          recognizedTexts[0],
                                           style: TextStyle(
                                               fontSize: 24,
                                               color: Colors.white),
@@ -318,7 +332,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                               child: Column(
                                 children: [
                                   Text(
-                                    summarizedTexts[index],
+                                    // summarizedTexts[0],
+                                    recognizedTexts[0], //一旦要約はなくす
                                     style: TextStyle(
                                       fontSize: 24,
                                       color: Colors.white,
@@ -329,8 +344,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                               ),
                             ),
                           ),
-                        );
-                      }),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 20),
                     // 録音開始/停止ボタン（色と視認性の改善）
