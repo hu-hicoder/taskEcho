@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../providers/MordalProvider.dart';
+import '../providers/mordalProvider.dart';
 import 'summaryPage.dart';
 //import 'taskManagementPage.dart';
 //import 'settingPage.dart';
 import 'voiceRecognitionPage.dart';
+import 'keywordHistoryPage.dart';
 import '../providers/recognitionProvider.dart';
 
 class BasePage extends StatelessWidget {
@@ -48,7 +49,10 @@ class BasePage extends StatelessWidget {
                     context: context,
                     builder: (BuildContext context) {
                       return AlertDialog(
-                        content: Text('ページを移動する際は\n録音を停止してください', style: TextStyle(fontSize: 20, color: Colors.redAccent), textAlign: TextAlign.center),
+                        content: Text('ページを移動する際は\n録音を停止してください',
+                            style: TextStyle(
+                                fontSize: 20, color: Colors.redAccent),
+                            textAlign: TextAlign.center),
                         actions: [
                           TextButton(
                             onPressed: () {
@@ -131,6 +135,21 @@ class BasePage extends StatelessWidget {
                                 context,
                                 MaterialPageRoute(
                                     builder: (context) => SummaryPage()),
+                              );
+                              context.read<ModalProvider>().toggleModal();
+                            },
+                          ),
+                          Divider(color: Colors.grey),
+                          ListTile(
+                            leading:
+                                Icon(Icons.history, color: Colors.cyanAccent),
+                            title: Text('キーワード履歴',
+                                style: TextStyle(color: Colors.white)),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => KeywordHistoryPage()),
                               );
                               context.read<ModalProvider>().toggleModal();
                             },

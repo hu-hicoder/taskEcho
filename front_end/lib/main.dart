@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_speech_to_text/pages/voiceRecognitionPage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart'; // providerをインポート
-import 'providers/MordalProvider.dart';
+import 'providers/mordalProvider.dart';
 import 'providers/classProvider.dart';
 import 'providers/keywordProvider.dart';
 import 'providers/textsDataProvider.dart';
 import 'providers/recognitionProvider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
+import 'dart:async';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -23,9 +27,30 @@ class SpeechToTextApp extends StatelessWidget {
   }
 }
 
+// SQLiteの初期化関数
+void _initSqlite() {
+  if (kIsWeb) {
+    // Webプラットフォームの場合、SQLite FFI Webを使用
+    databaseFactory = databaseFactoryFfiWeb;
+    print('SQLite Web initialized successfully');
+  } else {
+    // モバイルプラットフォームでは標準のSQLiteが使用される
+    print('Using default SQLite implementation for mobile');
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
   //await dotenv.load(fileName: ".env");
+
+  // SQLiteの初期化
+  try {
+    _initSqlite();
+  } catch (e) {
+    print('SQLite initialization error: $e');
+    // エラーが発生しても続行（SharedPreferencesにフォールバックする可能性）
+  }
+
   runApp(
     MultiProvider(
       providers: [
