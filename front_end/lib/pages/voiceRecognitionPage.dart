@@ -14,6 +14,9 @@ import '../providers/keywordProvider.dart';
 import '../dialogs/settingDialog.dart';
 import '../dialogs/keywordSettingDialog.dart';
 import '../dialogs/classSettingDialog.dart';
+import '/auth/googleSignIn.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'signIn.dart'; // SignInPageをインポート
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -242,275 +245,295 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     final recognitionProvider = Provider.of<RecognitionProvider>(context);
     final keywordProvider = Provider.of<KeywordProvider>(context);
 
-    return BasePage(
-      body: Stack(
-        children: [
-          // グラデーション背景または点滅する背景の表示
-          showGradient
-              ? AnimatedContainer(
-                  duration: Duration(milliseconds: 500),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [Colors.indigoAccent, Colors.deepPurpleAccent],
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('taskEcho'),
+      actions: [
+        IconButton(
+          icon: Icon(Icons.logout),
+          onPressed: () async {
+            await FirebaseAuth.instance.signOut();
+            await GoogleAuth.signOut();
+            // サインアウト後はタイトル画面へ戻す
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (_) => SignInPage()),
+              (route) => false,
+            );
+          },
+        ),
+      ],
+      ),
+      body: BasePage(
+        body: Stack(
+          children: [
+            // グラデーション背景または点滅する背景の表示
+            showGradient
+                ? AnimatedContainer(
+                    duration: Duration(milliseconds: 500),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Colors.indigoAccent, Colors.deepPurpleAccent],
+                      ),
                     ),
+                  )
+                : AnimatedContainer(
+                    duration: Duration(milliseconds: 500),
+                    color: backgroundColor, // 点滅する背景色
                   ),
-                )
-              : AnimatedContainer(
-                  duration: Duration(milliseconds: 500),
-                  color: backgroundColor, // 点滅する背景色
-                ),
-          SingleChildScrollView(
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    // 認識結果を表示するカード（縦に広く調整）
-                    Column(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            showDialog(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return AlertDialog(
-                                  content: SingleChildScrollView(
-                                    child: Column(
-                                      children: [
-                                        Text(
-                                          // summarizedTexts[0], //一旦戦闘の要素を表示
-                                          recognizedTexts[0], //一旦要約はなくす
-                                          style: TextStyle(
-                                              fontSize: 20,
-                                              color: Colors.yellow),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        SizedBox(height: 20),
-                                        Text(
-                                          recognizedTexts[0],
-                                          style: TextStyle(
-                                              fontSize: 24,
-                                              color: Colors.white),
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        SizedBox(height: 20),
-                                      ],
+            SingleChildScrollView(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 認識結果を表示するカード（縦に広く調整）
+                      Column(
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    content: SingleChildScrollView(
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            // summarizedTexts[0], //一旦戦闘の要素を表示
+                                            recognizedTexts[0], //一旦要約はなくす
+                                            style: TextStyle(
+                                                fontSize: 20,
+                                                color: Colors.yellow),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 20),
+                                          Text(
+                                            recognizedTexts[0],
+                                            style: TextStyle(
+                                                fontSize: 24,
+                                                color: Colors.white),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          SizedBox(height: 20),
+                                        ],
+                                      ),
                                     ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.of(context).pop();
+                                        },
+                                        child: Text('閉じる'),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              height: cardHeight,
+                              padding: EdgeInsets.all(20.0),
+                              margin: EdgeInsets.symmetric(vertical: 20.0),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 10,
+                                    offset: Offset(0, 5),
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.of(context).pop();
-                                      },
-                                      child: Text('閉じる'),
+                                ],
+                              ),
+                              child: SingleChildScrollView(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      // summarizedTexts[0],
+                                      recognizedTexts[0], //一旦要約はなくす
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        color: Colors.white,
+                                      ),
+                                      textAlign: TextAlign.center,
                                     ),
                                   ],
-                                );
-                              },
-                            );
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            height: cardHeight,
-                            padding: EdgeInsets.all(20.0),
-                            margin: EdgeInsets.symmetric(vertical: 20.0),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black26,
-                                  blurRadius: 10,
-                                  offset: Offset(0, 5),
                                 ),
-                              ],
-                            ),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    // summarizedTexts[0],
-                                    recognizedTexts[0], //一旦要約はなくす
-                                    style: TextStyle(
-                                      fontSize: 24,
-                                      color: Colors.white,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ],
                               ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20),
-                    // 録音開始/停止ボタン（色と視認性の改善）
-                    ElevatedButton.icon(
-                      icon: Icon(
-                        recognitionProvider.isRecognizing
-                            ? Icons.stop
-                            : Icons.mic,
-                        color: Colors.black,
-                      ),
-                      label: Text(
-                        recognitionProvider.isRecognizing ? '停止' : '開始',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      onPressed: () {
-                        if (recognitionProvider.isRecognizing) {
-                          stopRecording(); // 音声認識を停止
-                        } else {
-                          startRecording(); // 音声認識を開始
-                        }
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: recognitionProvider.isRecognizing
-                            ? Colors.redAccent
-                            : Colors.tealAccent, // より視認性の高い色に変更
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        elevation: 10,
-                      ),
-                    ),
-                    SizedBox(height: 20),
-                    // キーワード表示
-                    Container(
-                      padding: EdgeInsets.all(16.0),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black26,
-                            blurRadius: 10,
-                            offset: Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            keyword,
-                            style: TextStyle(
-                              fontSize: 24,
-                              color: existKeyword
-                                  ? Colors.redAccent
-                                  : Colors.greenAccent,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          SizedBox(height: 10),
-                          // 登録済みキーワード一覧
-                          if (keywordProvider.keywords.isNotEmpty)
-                            Container(
-                              padding: EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Colors.black38,
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "登録キーワード:",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                  Wrap(
-                                    spacing: 8,
-                                    children: keywordProvider.keywords
-                                        .map((k) => Chip(
-                                              label: Text(k),
-                                              backgroundColor: Colors.blueGrey,
-                                              labelStyle: TextStyle(
-                                                  color: Colors.white),
-                                            ))
-                                        .toList(),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          SizedBox(height: 10),
-                          // キーワード設定ボタンを追加
-                          ElevatedButton(
-                            onPressed: () {
-                              showKeywordSettingDialog(
-                                  context); // キーワード設定ダイアログを表示
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blueAccent,
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            child: Text(
-                              'キーワード設定',
-                              style: TextStyle(color: Colors.white),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    SizedBox(height: 20),
-                    DropdownButton<String>(
-                      hint: Text("授業を選択"),
-                      value: context.watch<ClassProvider>().selectedClass,
-                      onChanged: (String? newValue) {
-                        if (newValue != null) {
-                          setState(() {
-                            context
-                                .read<ClassProvider>()
-                                .setSelectedClass(newValue);
-                            print(
-                                "選択された授業: ${context.read<ClassProvider>().selectedClass}");
-                          });
-                        }
-                      },
-                      items: classProvider.classes
-                          .map<DropdownMenuItem<String>>((String value) {
-                        return DropdownMenuItem<String>(
-                          value: value,
-                          child: Text(value),
-                        );
-                      }).toList(),
-                    ),
-                    SizedBox(height: 20),
-                    //設定ボタンの追加
-                    Align(
-                      alignment: Alignment.bottomLeft,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          showSettingsDialog(context); // 設定ダイアログを表示
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.cyanAccent, // ボタンの背景色
-                          padding: EdgeInsets.all(16), // アイコンの周りのパディング
-                          shape: CircleBorder(), // ボタンを円形にする
-                          elevation: 0, // 影を削除
-                        ),
-                        child: Icon(
-                          Icons.settings,
+                      SizedBox(height: 20),
+                      // 録音開始/停止ボタン（色と視認性の改善）
+                      ElevatedButton.icon(
+                        icon: Icon(
+                          recognitionProvider.isRecognizing
+                              ? Icons.stop
+                              : Icons.mic,
                           color: Colors.black,
                         ),
+                        label: Text(
+                          recognitionProvider.isRecognizing ? '停止' : '開始',
+                          style: TextStyle(color: Colors.black),
+                        ),
+                        onPressed: () {
+                          if (recognitionProvider.isRecognizing) {
+                            stopRecording(); // 音声認識を停止
+                          } else {
+                            startRecording(); // 音声認識を開始
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: recognitionProvider.isRecognizing
+                              ? Colors.redAccent
+                              : Colors.tealAccent, // より視認性の高い色に変更
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          elevation: 10,
+                        ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 20),
+                      // キーワード表示
+                      Container(
+                        padding: EdgeInsets.all(16.0),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black26,
+                              blurRadius: 10,
+                              offset: Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              keyword,
+                              style: TextStyle(
+                                fontSize: 24,
+                                color: existKeyword
+                                    ? Colors.redAccent
+                                    : Colors.greenAccent,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            SizedBox(height: 10),
+                            // 登録済みキーワード一覧
+                            if (keywordProvider.keywords.isNotEmpty)
+                              Container(
+                                padding: EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black38,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      "登録キーワード:",
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white70,
+                                      ),
+                                    ),
+                                    Wrap(
+                                      spacing: 8,
+                                      children: keywordProvider.keywords
+                                          .map((k) => Chip(
+                                                label: Text(k),
+                                                backgroundColor: Colors.blueGrey,
+                                                labelStyle: TextStyle(
+                                                    color: Colors.white),
+                                              ))
+                                          .toList(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            SizedBox(height: 10),
+                            // キーワード設定ボタンを追加
+                            ElevatedButton(
+                              onPressed: () {
+                                showKeywordSettingDialog(
+                                    context); // キーワード設定ダイアログを表示
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 8),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: Text(
+                                'キーワード設定',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      DropdownButton<String>(
+                        hint: Text("授業を選択"),
+                        value: context.watch<ClassProvider>().selectedClass,
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            setState(() {
+                              context
+                                  .read<ClassProvider>()
+                                  .setSelectedClass(newValue);
+                              print(
+                                  "選択された授業: ${context.read<ClassProvider>().selectedClass}");
+                            });
+                          }
+                        },
+                        items: classProvider.classes
+                            .map<DropdownMenuItem<String>>((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                      ),
+                      SizedBox(height: 20),
+                      //設定ボタンの追加
+                      Align(
+                        alignment: Alignment.bottomLeft,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            showSettingsDialog(context); // 設定ダイアログを表示
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.cyanAccent, // ボタンの背景色
+                            padding: EdgeInsets.all(16), // アイコンの周りのパディング
+                            shape: CircleBorder(), // ボタンを円形にする
+                            elevation: 0, // 影を削除
+                          ),
+                          child: Icon(
+                            Icons.settings,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
