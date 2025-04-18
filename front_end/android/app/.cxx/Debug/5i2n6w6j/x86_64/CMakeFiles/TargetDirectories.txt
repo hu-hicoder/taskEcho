@@ -1,0 +1,2 @@
+C:/Users/28oso/Documents/hackathon/jphack/geek/taskEcho/front_end/android/app/.cxx/Debug/5i2n6w6j/x86_64/CMakeFiles/edit_cache.dir
+C:/Users/28oso/Documents/hackathon/jphack/geek/taskEcho/front_end/android/app/.cxx/Debug/5i2n6w6j/x86_64/CMakeFiles/rebuild_cache.dir

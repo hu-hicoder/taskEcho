@@ -1,3 +1,7 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'auth/googleSignIn.dart';
+import 'pages/signIn.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speech_to_text/pages/voiceRecognitionPage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -11,6 +15,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'dart:async';
+import 'firebase_options.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -22,7 +27,29 @@ class SpeechToTextApp extends StatelessWidget {
         primarySwatch: Colors.cyan,
         scaffoldBackgroundColor: Color(0xFF0F0F1F), // ダークテーマ背景色
       ),
-      home: VoiceRecognitionPage(),
+      // home: VoiceRecognitionPage(),
+      home: AuthWrapper(), // 認証状態に応じて画面を切り替える
+    );
+  }
+}
+
+// 認証状態に応じて画面を切り替えるウィジェット
+class AuthWrapper extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<User?>(
+      future: FirebaseAuth.instance.authStateChanges().first,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData) {
+          // ログイン中はヘッダー付きメイン画面へ
+          return VoiceRecognitionPage();
+        } else {
+          // 未ログインはタイトル画面
+          return SignInPage();
+        }
+      },
     );
   }
 }
@@ -42,6 +69,10 @@ void _initSqlite() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
   //await dotenv.load(fileName: ".env");
+  await dotenv.load(fileName: "assets/.env");
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   // SQLiteの初期化
   try {
@@ -123,8 +154,6 @@ void main() async {
 //                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
 //                 ),
 //               ),
-
-
 
 //               const SizedBox(height: 20),
 //               SpeechToTextUltra(
