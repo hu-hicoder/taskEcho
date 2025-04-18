@@ -50,6 +50,16 @@ class GoogleAuth {
     }
   }
 
+  static Future<User?> signInAnonymously() async {
+    try {
+      UserCredential userCredential = await _auth.signInAnonymously();
+      return userCredential.user;
+    } on FirebaseAuthException catch (e) {
+      print("Error during Anonymous Sign-In: $e");
+      return null;
+    }
+  }
+
   // ログアウト処理
   static Future<void> signOut() async {
     if (!kIsWeb) {
