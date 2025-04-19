@@ -39,6 +39,11 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   TextEditingController classController = TextEditingController();
   // 呼び出し済みのsummarizedTextsを追跡するセットを定義
   Set<String> calledeventTime = {};
+  // キーワード保存の重複を防ぐためのマップ
+  // キー: "キーワード:クラス名", 値: 最後に保存した時間
+  Map<String, DateTime> _lastSavedKeywords = {};
+  // キーワード保存のクールダウン時間（秒）
+  final int _keywordSaveCooldown = 60;
   int maxWords = 100; // 最大文字数を設定
 
   @override
@@ -49,18 +54,41 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     super.dispose();
   }
 
-  // キーワードの周辺テキストを抽出する関数（前後100文字）
-  String extractContextText(String text, String keyword) {
-    int keywordIndex = text.indexOf(keyword);
-    if (keywordIndex == -1) return text;
-
-    // 前後100文字を抽出（合計約200文字）
-    int startIndex = (keywordIndex - 100) < 0 ? 0 : keywordIndex - 100;
-    int endIndex = (keywordIndex + keyword.length + 100) > text.length
-        ? text.length
-        : keywordIndex + keyword.length + 100;
-
-    return text.substring(startIndex, endIndex);
+  // キーワード検出時に1分後にDBに保存するための関数
+  void saveKeywordWithDelay(String text, String keyword, String selectedClass, KeywordProvider keywordProvider, RecognitionProvider recognitionProvider) {
+    // キーワードとクラス名の組み合わせで一意のキーを作成
+    String uniqueKey = "$keyword:$selectedClass";
+    DateTime now = DateTime.now();
+    
+    // 前回の保存時間を取得
+    DateTime? lastSaved = _lastSavedKeywords[uniqueKey];
+    
+    // 前回の保存から指定時間が経過しているか、または初めての保存の場合
+    if (lastSaved == null || 
+        now.difference(lastSaved).inSeconds > _keywordSaveCooldown) {
+      
+      // 保存時間を更新（重複防止のため先に記録）
+      _lastSavedKeywords[uniqueKey] = now;
+      
+      print('キーワード "$keyword" を検出: 1分後に保存します');
+      
+      // 1分後に保存を実行
+      Future.delayed(Duration(minutes: 1), () async {
+        // キーワードを含むスニペットを抽出（RecognitionProviderのメソッドを使用）
+        String snippet = recognitionProvider.extractSnippetWithKeyword(text, [keyword]);
+        
+        // SQLiteに保存
+        await keywordProvider.saveKeywordDetection(keyword, selectedClass, snippet);
+        
+        print('キーワード "$keyword" を保存しました: $snippet');
+      });
+    } else {
+      // クールダウン中の場合
+      int secondsLeft = _keywordSaveCooldown - 
+          now.difference(lastSaved).inSeconds;
+      print('キーワード "$keyword" は最近検出されました。'
+          '次の検出まで約${secondsLeft}秒待機します。');
+    }
   }
 
   // サーバーからデータを取得する関数
@@ -121,13 +149,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             keyword = "検出: ${detectedKeywords.join(', ')}";
             startFlashing();
 
-            // キーワードごとに周辺テキストを抽出してSQLiteに保存
+            // キーワードごとに1分後にDBに保存
             for (String detectedKeyword in detectedKeywords) {
-              String contextText =
-                  extractContextText(newRecognizedText, detectedKeyword);
-              keywordProvider.saveKeywordDetection(
-                  detectedKeyword, selectedClass, contextText);
-              print('キーワード "$detectedKeyword" を検出: $contextText');
+              saveKeywordWithDelay(
+                newRecognizedText, 
+                detectedKeyword, 
+                selectedClass, 
+                keywordProvider,
+                recognitionProvider
+              );
             }
           } else {
             stopFlashing();
