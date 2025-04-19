@@ -54,6 +54,7 @@ dependencies:
   sqflite_common_ffi_web: ^0.4.2
   path: ^1.8.3
   path_provider: ^2.1.2
+  flutter_gemini: ^3.0.0
 
 dev_dependencies:
   flutter_test:

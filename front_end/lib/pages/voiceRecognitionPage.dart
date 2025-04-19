@@ -18,6 +18,21 @@ import '/auth/googleSignIn.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'signIn.dart'; // SignInPageをインポート
 
+// 遅延保存用のデータを保持するクラス
+class DelayedKeywordData {
+  final String keyword;
+  final String className;
+  final DateTime detectionTime;
+  final String initialText;
+  
+  DelayedKeywordData({
+    required this.keyword,
+    required this.className,
+    required this.detectionTime,
+    required this.initialText,
+  });
+}
+
 class VoiceRecognitionPage extends StatefulWidget {
   @override
   _VoiceRecognitionPageState createState() => _VoiceRecognitionPageState();
@@ -45,6 +60,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   // キーワード保存のクールダウン時間（秒）
   final int _keywordSaveCooldown = 60;
   int maxWords = 100; // 最大文字数を設定
+  
 
   @override
   void dispose() {
@@ -54,6 +70,9 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     super.dispose();
   }
 
+  // 遅延保存用のデータを保持するマップ
+  Map<String, DelayedKeywordData> _pendingKeywordData = {};
+  
   // キーワード検出時に1分後にDBに保存するための関数
   void saveKeywordWithDelay(String text, String keyword, String selectedClass, KeywordProvider keywordProvider, RecognitionProvider recognitionProvider) {
     // キーワードとクラス名の組み合わせで一意のキーを作成
@@ -70,17 +89,42 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       // 保存時間を更新（重複防止のため先に記録）
       _lastSavedKeywords[uniqueKey] = now;
       
+      
       print('キーワード "$keyword" を検出: 1分後に保存します');
       
       // 1分後に保存を実行
-      Future.delayed(Duration(minutes: 1), () async {
-        // キーワードを含むスニペットを抽出（RecognitionProviderのメソッドを使用）
-        String snippet = recognitionProvider.extractSnippetWithKeyword(text, [keyword]);
-        
-        // SQLiteに保存
-        await keywordProvider.saveKeywordDetection(keyword, selectedClass, snippet);
-        
-        print('キーワード "$keyword" を保存しました: $snippet');
+      Future.delayed(Duration(seconds: 60), () async { // Androidでも1分間の遅延を確保
+        try {
+          // 保存予定のデータを取得
+          final keywordData = _pendingKeywordData[uniqueKey];
+          if (keywordData == null) {
+            print('キーワード "$keyword" の保存データが見つかりません');
+            return;
+          }
+          
+          // 現在の認識テキストを取得（1分後の状態）
+          String currentText = recognitionProvider.lastWords;
+          
+          // 1分前のテキストと現在のテキストを比較し、より多くの情報を含むテキストを使用
+          String textToUse = currentText.length > keywordData.initialText.length 
+              ? currentText 
+              : keywordData.initialText;
+          
+          // キーワードを含むスニペットを抽出
+          String snippet = await recognitionProvider.extractSnippetWithKeyword(textToUse, [keyword]);
+          
+          // SQLiteに保存
+          await keywordProvider.saveKeywordDetection(keyword, selectedClass, snippet);
+          
+          print('キーワード "$keyword" を保存しました: $snippet');
+          
+          // 保存が完了したらマップから削除
+          _pendingKeywordData.remove(uniqueKey);
+        } catch (e) {
+          print('キーワード "$keyword" の保存中にエラーが発生しました: $e');
+          // エラーが発生した場合もマップから削除
+          _pendingKeywordData.remove(uniqueKey);
+        }
       });
     } else {
       // クールダウン中の場合
@@ -91,7 +135,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     }
   }
 
-  // サーバーからデータを取得する関数
+  // 音声認識結果を取得する関数
   Future<void> fetchRecognizedText() async {
     final textsDataProvider =
         Provider.of<TextsDataProvider>(context, listen: false);
@@ -108,12 +152,11 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
       if (newRecognizedText.isNotEmpty) {
         // 要約処理だけど今のところそのまま返す
-        // String newSummarizedText = newRecognizedText;
         String newSummarizedText = "";
+        
 
-        print('認識結果：${newRecognizedText}');
-
-        // キーワード検出
+        
+        // キーワード検出（完全なテキストを使用）
         List<String> keywords = keywordProvider.keywords;
         detectedKeywords =
             keywords.where((k) => newRecognizedText.contains(k)).toList();
@@ -149,7 +192,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             keyword = "検出: ${detectedKeywords.join(', ')}";
             startFlashing();
 
-            // キーワードごとに1分後にDBに保存
+            // キーワードごとに1分後にDBに保存（完全なテキストを使用）
             for (String detectedKeyword in detectedKeywords) {
               saveKeywordWithDelay(
                 newRecognizedText, 
@@ -163,10 +206,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             stopFlashing();
           }
         });
-
-
-        print('認識結果：${summarizedTexts[currentIndex]}');
-
       }
     } catch (e) {
       print('エラーが発生しました: $e');
@@ -219,10 +258,19 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     }
     isFlashing = false;
     flashTimer?.cancel();
-    keyword = "キーワード検出待機中"; // キーワードをリセット
+    
+    // キーワードのリセットは行わない（検出されたキーワードを表示し続ける）
+    // 代わりに、新しいキーワードが検出されるか、音声認識が停止されるまで表示を維持
+    
     setState(() {
       showGradient = true; // 背景をグラデーションに戻す
     });
+  }
+  
+  // 音声認識停止時にキーワード表示をリセットする
+  void resetKeywordDisplay() {
+    keyword = "キーワード検出待機中";
+    existKeyword = false;
   }
 
   // 音声認識の開始
@@ -262,7 +310,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     recognitionProvider.stopListening(); // 音声認識を停止
     timer?.cancel(); // タイマーを停止
     stopFlashing(); // 点滅停止
-    keyword = "キーワード検出待機中"; // キーワードをリセット
+    resetKeywordDisplay(); // キーワード表示をリセット
 
     print("🛑 音声認識を停止しました");
   }

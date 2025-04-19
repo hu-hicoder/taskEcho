@@ -9,11 +9,13 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
   bool _speechEnabled = false;
   String _lastWords = '';
+  final apiKey = dotenv.env['GEMINI_API_KEY'];
 
   final SpeechToText _speechToText = SpeechToText();
   Timer? _cacheClearTimer; // キャッシュクリア用のタイマー
@@ -49,6 +51,12 @@ class RecognitionProvider with ChangeNotifier {
           },
           onError: (error) {
             print("SpeechToTextのエラー: $error"); // ← エラーを確認
+            // エラーが発生した場合、特にタイムアウトエラーの場合は再初期化を試みる
+            if (error.errorMsg == "error_speech_timeout" && _isRecognizing) {
+              Future.delayed(Duration(milliseconds: 500), () {
+                startListening();
+              });
+            }
           },
         );
         log('Speech recognition available: $_speechEnabled');
@@ -105,6 +113,7 @@ class RecognitionProvider with ChangeNotifier {
         onResult: _onSpeechResult,
         partialResults: true,
         localeId: "ja_JP",
+        pauseFor: Duration(seconds: 60),
         listenMode: ListenMode.dictation,
       );
       print("SpeechToText のリスニング開始");
@@ -129,7 +138,6 @@ class RecognitionProvider with ChangeNotifier {
 
   /// 音声認識の結果をリアルタイムで更新
   void _onSpeechResult(SpeechRecognitionResult result) async {
-    print("onSpeechResult() が呼ばれました");
     _lastWords = " " + result.recognizedWords;
     print('onSpeechResult: $_lastWords');
 
@@ -137,7 +145,7 @@ class RecognitionProvider with ChangeNotifier {
 
     // もし認識が止まったら自動で再開
     if (!_speechToText.isListening && _isRecognizing) {
-      Future.delayed(Duration(seconds: 1), () {
+      Future.delayed(Duration(milliseconds: 200), () {
         if (_isRecognizing && !_speechToText.isListening) {
           startListening(); // 🔥 停止中でなければ再開
         }
@@ -149,7 +157,7 @@ class RecognitionProvider with ChangeNotifier {
   }
 
   /// テキストからキーワードを含む部分の前後の文脈を抽出する
-  String extractSnippetWithKeyword(String text, List<String> keywords) {
+  Future<String> extractSnippetWithKeyword(String text, List<String> keywords) async {
     // 最初に見つかったキーワードを使用
     String keyword = keywords.first;
 
@@ -157,13 +165,20 @@ class RecognitionProvider with ChangeNotifier {
     int keywordIndex = text.indexOf(keyword);
     if (keywordIndex == -1) return text; // キーワードが見つからない場合は全文を返す
 
-    // 前後の文脈を含めるための範囲を計算（前後50文字程度）
-    int startIndex = (keywordIndex - 50) < 0 ? 0 : keywordIndex - 50;
-    int endIndex = (keywordIndex + keyword.length + 50) > text.length
+    // 前後の文脈を含めるための範囲を計算（前後100文字程度）
+    int startIndex = (keywordIndex - 100) < 0 ? 0 : keywordIndex - 100;
+    int endIndex = (keywordIndex + keyword.length + 100) > text.length
         ? text.length
-        : keywordIndex + keyword.length + 50;
-
-    return text.substring(startIndex, endIndex);
+        : keywordIndex + keyword.length + 100;
+    
+    // 抽出したテキスト
+    String extractedText = text.substring(startIndex, endIndex);
+    
+    // 要約のプレースホルダー（将来的にGemini APIを使用して要約する予定）
+    String summary = "【キーワード「$keyword」の周辺テキスト】: $extractedText";
+    
+    print('キーワード "$keyword" の周辺テキストを抽出: $summary');
+    return summary;
   }
 
   /// バックエンドにデータを送信する
