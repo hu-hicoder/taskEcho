@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_gemini/flutter_gemini.dart';
 
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
@@ -18,6 +19,7 @@ class RecognitionProvider with ChangeNotifier {
   final apiKey = dotenv.env['GEMINI_API_KEY'];
 
   final SpeechToText _speechToText = SpeechToText();
+  late final Gemini _gemini;
   Timer? _cacheClearTimer; // キャッシュクリア用のタイマー
 
   bool get isRecognizing => _isRecognizing;
@@ -27,6 +29,23 @@ class RecognitionProvider with ChangeNotifier {
   RecognitionProvider() {
     _initSpeech();
     _startCacheClearTimer();
+    _initGemini();
+  }
+
+  /// Gemini APIの初期化
+  void _initGemini() {
+    try {
+      _gemini = Gemini.instance;
+      // APIキーを設定
+      if (apiKey != null) {
+        Gemini.init(apiKey: apiKey!);
+        print('Gemini API initialized successfully');
+      } else {
+        print('GEMINI_API_KEYが設定されていません。.envファイルを確認してください。');
+      }
+    } catch (e) {
+      print('Gemini API initialization error: $e');
+    }
   }
 
   Future<void> saveKeywords(List<String> keywords) async {
@@ -52,7 +71,9 @@ class RecognitionProvider with ChangeNotifier {
           onError: (error) {
             print("SpeechToTextのエラー: $error"); // ← エラーを確認
             // エラーが発生した場合、特にタイムアウトエラーの場合は再初期化を試みる
-            if (error.errorMsg == "error_speech_timeout" && _isRecognizing) {
+            if (_isRecognizing &&
+               (error.errorMsg == "error_speech_timeout" ||
+                error.errorMsg == "error_no_match")) {
               Future.delayed(Duration(milliseconds: 500), () {
                 startListening();
               });
@@ -156,7 +177,7 @@ class RecognitionProvider with ChangeNotifier {
     // UIコンポーネントでKeywordProviderを使用して検出する
   }
 
-  /// テキストからキーワードを含む部分の前後の文脈を抽出する
+  /// テキストからキーワードを含む部分の前後の文脈を抽出し、Geminiで要約する
   Future<String> extractSnippetWithKeyword(String text, List<String> keywords) async {
     // 最初に見つかったキーワードを使用
     String keyword = keywords.first;
@@ -173,12 +194,40 @@ class RecognitionProvider with ChangeNotifier {
     
     // 抽出したテキスト
     String extractedText = text.substring(startIndex, endIndex);
+    String resultText = "【キーワード「$keyword」の周辺テキスト】: $extractedText";
     
-    // 要約のプレースホルダー（将来的にGemini APIを使用して要約する予定）
-    String summary = "【キーワード「$keyword」の周辺テキスト】: $extractedText";
-    
-    print('キーワード "$keyword" の周辺テキストを抽出: $summary');
-    return summary;
+    try {
+      // APIキーが設定されているか確認
+      if (apiKey == null) {
+        print('GEMINI_API_KEYが設定されていないため、要約をスキップします。');
+        return resultText;
+      }
+      
+      // Gemini APIに要約を依頼するプロンプト
+      String prompt = '''
+以下のテキストを要約してください。キーワード「$keyword」に関連する重要な情報を保持しつつ、簡潔にまとめてください。
+テキスト: $extractedText
+''';
+      
+      // Geminiによる要約の生成
+      try {
+        final result = await _gemini.text(prompt);
+        
+        if (result != null && result.output != null && result.output!.isNotEmpty) {
+          print('Geminiによる要約: ${result.output}');
+          return "【キーワード「$keyword」の要約】: ${result.output}";
+        } else {
+          print('Geminiによる要約に失敗しました。元のテキストを返します。');
+          return resultText;
+        }
+      } catch (e) {
+        print('Gemini API呼び出し中にエラーが発生しました: $e');
+        return resultText;
+      }
+    } catch (e) {
+      print('Geminiによる要約処理中にエラーが発生しました: $e');
+      return resultText; // エラーが発生した場合は元のテキストを返す
+    }
   }
 
   /// バックエンドにデータを送信する
