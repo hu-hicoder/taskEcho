@@ -24,7 +24,7 @@ class DelayedKeywordData {
   final String className;
   final DateTime detectionTime;
   final String initialText;
-  
+
   DelayedKeywordData({
     required this.keyword,
     required this.className,
@@ -60,7 +60,6 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   // キーワード保存のクールダウン時間（秒）
   final int _keywordSaveCooldown = 60;
   int maxWords = 100; // 最大文字数を設定
-  
 
   @override
   void dispose() {
@@ -72,28 +71,32 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
   // 遅延保存用のデータを保持するマップ
   Map<String, DelayedKeywordData> _pendingKeywordData = {};
-  
+
   // キーワード検出時に1分後にDBに保存するための関数
-  void saveKeywordWithDelay(String text, String keyword, String selectedClass, KeywordProvider keywordProvider, RecognitionProvider recognitionProvider) {
+  void saveKeywordWithDelay(
+      String text,
+      String keyword,
+      String selectedClass,
+      KeywordProvider keywordProvider,
+      RecognitionProvider recognitionProvider) {
     // キーワードとクラス名の組み合わせで一意のキーを作成
     String uniqueKey = "$keyword:$selectedClass";
     DateTime now = DateTime.now();
-    
+
     // 前回の保存時間を取得
     DateTime? lastSaved = _lastSavedKeywords[uniqueKey];
-    
+
     // 前回の保存から指定時間が経過しているか、または初めての保存の場合
-    if (lastSaved == null || 
+    if (lastSaved == null ||
         now.difference(lastSaved).inSeconds > _keywordSaveCooldown) {
-      
       // 保存時間を更新（重複防止のため先に記録）
       _lastSavedKeywords[uniqueKey] = now;
-      
-      
+
       print('キーワード "$keyword" を検出: 1分後に保存します');
-      
+
       // 1分後に保存を実行
-      Future.delayed(Duration(seconds: 60), () async { // Androidでも1分間の遅延を確保
+      Future.delayed(Duration(seconds: 60), () async {
+        // Androidでも1分間の遅延を確保
         try {
           // 保存予定のデータを取得
           final keywordData = _pendingKeywordData[uniqueKey];
@@ -101,23 +104,25 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             print('キーワード "$keyword" の保存データが見つかりません');
             return;
           }
-          
+
           // 現在の認識テキストを取得（1分後の状態）
           String currentText = recognitionProvider.lastWords;
-          
+
           // 1分前のテキストと現在のテキストを比較し、より多くの情報を含むテキストを使用
-          String textToUse = currentText.length > keywordData.initialText.length 
-              ? currentText 
+          String textToUse = currentText.length > keywordData.initialText.length
+              ? currentText
               : keywordData.initialText;
-          
+
           // キーワードを含むスニペットを抽出
-          String snippet = await recognitionProvider.extractSnippetWithKeyword(textToUse, [keyword]);
-          
+          String snippet = await recognitionProvider
+              .extractSnippetWithKeyword(textToUse, [keyword]);
+
           // SQLiteに保存
-          await keywordProvider.saveKeywordDetection(keyword, selectedClass, snippet);
-          
+          await keywordProvider.saveKeywordDetection(
+              keyword, selectedClass, snippet);
+
           print('キーワード "$keyword" を保存しました: $snippet');
-          
+
           // 保存が完了したらマップから削除
           _pendingKeywordData.remove(uniqueKey);
         } catch (e) {
@@ -128,8 +133,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       });
     } else {
       // クールダウン中の場合
-      int secondsLeft = _keywordSaveCooldown - 
-          now.difference(lastSaved).inSeconds;
+      int secondsLeft =
+          _keywordSaveCooldown - now.difference(lastSaved).inSeconds;
       print('キーワード "$keyword" は最近検出されました。'
           '次の検出まで約${secondsLeft}秒待機します。');
     }
@@ -153,9 +158,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       if (newRecognizedText.isNotEmpty) {
         // 要約処理だけど今のところそのまま返す
         String newSummarizedText = "";
-        
 
-        
         // キーワード検出（完全なテキストを使用）
         List<String> keywords = keywordProvider.keywords;
         detectedKeywords =
@@ -194,13 +197,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
             // キーワードごとに1分後にDBに保存（完全なテキストを使用）
             for (String detectedKeyword in detectedKeywords) {
-              saveKeywordWithDelay(
-                newRecognizedText, 
-                detectedKeyword, 
-                selectedClass, 
-                keywordProvider,
-                recognitionProvider
-              );
+              saveKeywordWithDelay(newRecognizedText, detectedKeyword,
+                  selectedClass, keywordProvider, recognitionProvider);
             }
           } else {
             stopFlashing();
@@ -258,15 +256,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     }
     isFlashing = false;
     flashTimer?.cancel();
-    
+
     // キーワードのリセットは行わない（検出されたキーワードを表示し続ける）
     // 代わりに、新しいキーワードが検出されるか、音声認識が停止されるまで表示を維持
-    
+
     setState(() {
       showGradient = true; // 背景をグラデーションに戻す
     });
   }
-  
+
   // 音声認識停止時にキーワード表示をリセットする
   void resetKeywordDisplay() {
     keyword = "キーワード検出待機中";
@@ -326,21 +324,21 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('taskEcho'),
-      actions: [
-        IconButton(
-          icon: Icon(Icons.logout),
-          onPressed: () async {
-            await FirebaseAuth.instance.signOut();
-            await GoogleAuth.signOut();
-            // サインアウト後はタイトル画面へ戻す
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => SignInPage()),
-              (route) => false,
-            );
-          },
-        ),
-      ],
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              await GoogleAuth.signOut();
+              // サインアウト後はタイトル画面へ戻す
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => SignInPage()),
+                (route) => false,
+              );
+            },
+          ),
+        ],
       ),
       body: BasePage(
         body: Stack(
@@ -368,85 +366,82 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // 認識結果を表示するカード（縦に広く調整）
-                      Column(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              showDialog(
-                                context: context,
-                                builder: (BuildContext context) {
-                                  return AlertDialog(
-                                    content: SingleChildScrollView(
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            // summarizedTexts[0], //一旦戦闘の要素を表示
-                                            recognizedTexts[0], //一旦要約はなくす
-                                            style: TextStyle(
-                                                fontSize: 20,
-                                                color: Colors.yellow),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          SizedBox(height: 20),
-                                          Text(
-                                            recognizedTexts[0],
-                                            style: TextStyle(
-                                                fontSize: 24,
-                                                color: Colors.white),
-                                            textAlign: TextAlign.center,
-                                          ),
-                                          SizedBox(height: 20),
-                                        ],
+                      SizedBox(height: 40),
+                      // 認識結果を表示するカード（縦に広\く調整）
+
+                      GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (BuildContext context) {
+                              return AlertDialog(
+                                content: SingleChildScrollView(
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        // summarizedTexts[0], //一旦戦闘の要素を表示
+                                        recognizedTexts[0], //一旦要約はなくす
+                                        style: TextStyle(
+                                            fontSize: 20, color: Colors.yellow),
+                                        textAlign: TextAlign.center,
                                       ),
-                                    ),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                        },
-                                        child: Text('閉じる'),
+                                      SizedBox(height: 20),
+                                      Text(
+                                        recognizedTexts[0],
+                                        style: TextStyle(
+                                            fontSize: 24, color: Colors.white),
+                                        textAlign: TextAlign.center,
                                       ),
+                                      SizedBox(height: 20),
                                     ],
-                                  );
-                                },
-                              );
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: cardHeight,
-                              padding: EdgeInsets.all(20.0),
-                              margin: EdgeInsets.symmetric(vertical: 20.0),
-                              decoration: BoxDecoration(
-                                color: Colors.black54,
-                                borderRadius: BorderRadius.circular(20),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black26,
-                                    blurRadius: 10,
-                                    offset: Offset(0, 5),
+                                  ),
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () {
+                                      Navigator.of(context).pop();
+                                    },
+                                    child: Text('閉じる'),
                                   ),
                                 ],
+                              );
+                            },
+                          );
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          height: cardHeight,
+                          padding: EdgeInsets.all(20.0),
+                          margin: EdgeInsets.symmetric(vertical: 20.0),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 10,
+                                offset: Offset(0, 5),
                               ),
-                              child: SingleChildScrollView(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      // summarizedTexts[0],
-                                      recognizedTexts[0], //一旦要約はなくす
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        color: Colors.white,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
+                            ],
+                          ),
+                          child: SingleChildScrollView(
+                            child: Column(
+                              children: [
+                                Text(
+                                  // summarizedTexts[0],
+                                  recognizedTexts[0], //一旦要約はなくす
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    color: Colors.white,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                              ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
+
                       SizedBox(height: 20),
                       // 録音開始/停止ボタン（色と視認性の改善）
                       ElevatedButton.icon(
@@ -471,8 +466,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                           backgroundColor: recognitionProvider.isRecognizing
                               ? Colors.redAccent
                               : Colors.tealAccent, // より視認性の高い色に変更
-                          padding:
-                              EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 45, vertical: 21),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -530,7 +525,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                       children: keywordProvider.keywords
                                           .map((k) => Chip(
                                                 label: Text(k),
-                                                backgroundColor: Colors.blueGrey,
+                                                backgroundColor:
+                                                    Colors.blueGrey,
                                                 labelStyle: TextStyle(
                                                     color: Colors.white),
                                               ))
@@ -585,28 +581,28 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                           );
                         }).toList(),
                       ),
-                      SizedBox(height: 20),
-                      //設定ボタンの追加
-                      Align(
-                        alignment: Alignment.bottomLeft,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            showSettingsDialog(context); // 設定ダイアログを表示
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.cyanAccent, // ボタンの背景色
-                            padding: EdgeInsets.all(16), // アイコンの周りのパディング
-                            shape: CircleBorder(), // ボタンを円形にする
-                            elevation: 0, // 影を削除
-                          ),
-                          child: Icon(
-                            Icons.settings,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ),
                     ],
                   ),
+                ),
+              ),
+            ),
+            //設定ボタンの追加
+            Positioned(
+              bottom: 20,
+              left: 20,
+              child: ElevatedButton(
+                onPressed: () {
+                  showSettingsDialog(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyanAccent,
+                  padding: EdgeInsets.all(16),
+                  shape: CircleBorder(),
+                  elevation: 0,
+                ),
+                child: Icon(
+                  Icons.settings,
+                  color: Colors.black,
                 ),
               ),
             ),
