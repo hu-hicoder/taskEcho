@@ -89,6 +89,13 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       // 保存時間を更新（重複防止のため先に記録）
       _lastSavedKeywords[uniqueKey] = now;
       
+      // 保存予定のデータを記録
+      _pendingKeywordData[uniqueKey] = DelayedKeywordData(
+        keyword: keyword,
+        className: selectedClass,
+        detectionTime: now,
+        initialText: text,
+      );
       
       print('キーワード "$keyword" を検出: 1分後に保存します');
       
@@ -102,13 +109,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             return;
           }
           
-          // 現在の認識テキストを取得（1分後の状態）
+          // 結合テキストまたは現在の認識テキストを取得（1分後の状態）
+          String combinedText = recognitionProvider.combinedText;
           String currentText = recognitionProvider.lastWords;
           
-          // 1分前のテキストと現在のテキストを比較し、より多くの情報を含むテキストを使用
-          String textToUse = currentText.length > keywordData.initialText.length 
-              ? currentText 
-              : keywordData.initialText;
+          // 結合テキスト、現在のテキスト、1分前のテキストを比較し、最も情報量の多いテキストを使用
+          String textToUse = combinedText.isNotEmpty ? combinedText : 
+              (currentText.length > keywordData.initialText.length 
+                  ? currentText 
+                  : keywordData.initialText);
           
           // キーワードを含むスニペットを抽出
           String snippet = await recognitionProvider.extractSnippetWithKeyword(textToUse, [keyword]);
@@ -154,12 +163,15 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         // 要約処理だけど今のところそのまま返す
         String newSummarizedText = "";
         
-
+        // 結合テキストを使用してキーワード検出
+        String textForKeywordDetection = recognitionProvider.combinedText.isNotEmpty 
+            ? recognitionProvider.combinedText 
+            : newRecognizedText;
         
-        // キーワード検出（完全なテキストを使用）
+        // キーワード検出（結合テキストを使用）
         List<String> keywords = keywordProvider.keywords;
         detectedKeywords =
-            keywords.where((k) => newRecognizedText.contains(k)).toList();
+            keywords.where((k) => textForKeywordDetection.contains(k)).toList();
         existKeyword = detectedKeywords.isNotEmpty;
 
         if (newRecognizedText.length > maxWords) {
