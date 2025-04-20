@@ -2,11 +2,17 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:googleapis/calendar/v3.dart' show CalendarApi;
 
 class GoogleAuth {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: dotenv.env['GOOGLE_CLIENT_ID'], // 環境変数からクライアントIDを取得
+    scopes: [
+      'email',
+      'profile',
+      CalendarApi.calendarScope
+    ]
   );
 
   // サイレントサインインを試みる

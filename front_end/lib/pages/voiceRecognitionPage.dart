@@ -1,4 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter_speech_to_text/services/googleCalendarService.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:googleapis/calendar/v3.dart' show CalendarApi, Event, EventDateTime;
 import 'basePage.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -32,6 +36,23 @@ class DelayedKeywordData {
     required this.initialText,
   });
 }
+
+// Google カレンダー API 用 HTTP クライアント
+class GoogleHttpClient extends http.BaseClient {
+  final Map<String, String> _headers;
+  final http.Client _inner = http.Client();
+  GoogleHttpClient(this._headers);
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) {
+    return _inner.send(request..headers.addAll(_headers));
+  }
+}
+
+// サイレントサインイン用インスタンス
+final GoogleSignIn _calendarSignIn = GoogleSignIn(
+  clientId: dotenv.env['GOOGLE_CLIENT_ID'],
+  scopes: [CalendarApi.calendarScope],
+);
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -132,6 +153,122 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
               keyword, selectedClass, snippet);
 
           print('キーワード "$keyword" を保存しました: $snippet');
+
+          // ── ここから日時パターン検出とカレンダー登録 ──
+          final now = keywordData.detectionTime;
+          DateTime? eventDt;
+
+          // 1. 相対日＋時刻：「今日」「明日」「明後日」
+          final rel = RegExp(r'(今日|明日|明後日)(?:\s*(\d{1,2}:\d{2}))?').firstMatch(snippet);
+          if (rel != null) {
+            int days = rel.group(1) == '明日'
+                ? 1
+                : rel.group(1) == '明後日'
+                    ? 2
+                    : 0;
+            final base = now.add(Duration(days: days));
+            if (rel.group(2) != null) {
+              final p = rel.group(2)!.split(':');
+              eventDt = DateTime(base.year, base.month, base.day, int.parse(p[0]), int.parse(p[1]));
+            } else {
+              eventDt = DateTime(base.year, base.month, base.day, 9, 0);
+            }
+          }
+          // 2. 「YYYY/MM/DD [HH:mm]」
+          else {
+            final ymd = RegExp(r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:\s*(\d{1,2}:\d{2}))?')
+                .firstMatch(snippet);
+            if (ymd != null) {
+              final y = int.parse(ymd.group(1)!), m = int.parse(ymd.group(2)!), d = int.parse(ymd.group(3)!);
+              if (ymd.group(4) != null) {
+                final p = ymd.group(4)!.split(':');
+                eventDt = DateTime(y, m, d, int.parse(p[0]), int.parse(p[1]));
+              } else {
+                eventDt = DateTime(y, m, d, 9, 0);
+              }
+            }
+            // 3. 「M月D日 [HH:mm]」
+            else {
+              final md = RegExp(r'(\d{1,2})月(\d{1,2})日(?:\s*(\d{1,2}:\d{2}))?')
+                  .firstMatch(snippet);
+              if (md != null) {
+                final m = int.parse(md.group(1)!), d = int.parse(md.group(2)!);
+                if (md.group(3) != null) {
+                  final p = md.group(3)!.split(':');
+                  eventDt = DateTime(now.year, m, d, int.parse(p[0]), int.parse(p[1]));
+                } else {
+                  eventDt = DateTime(now.year, m, d, 9, 0);
+                }
+              }
+              // 4. 時刻のみ「HH:mm」
+              else {
+                final t = RegExp(r'(\d{1,2}:\d{2})').firstMatch(snippet);
+                if (t != null) {
+                  final p = t.group(1)!.split(':');
+                  eventDt = DateTime(now.year, now.month, now.day, int.parse(p[0]), int.parse(p[1]));
+                }
+              }
+            }
+          }
+
+          if (eventDt != null && FirebaseAuth.instance.currentUser != null) {
+          try {
+            final service = GoogleCalendarService();
+            await service.createEvent(
+              eventTime: eventDt,
+              summary: snippet,
+              duration: Duration(hours: 1),
+              timeZone: 'Asia/Tokyo',
+            );
+            print('Googleカレンダーにイベントを追加しました');
+          } catch (e) {
+            print('カレンダー登録エラー: $e');
+          }
+        }
+
+          // // Google カレンダー登録
+          // final user = FirebaseAuth.instance.currentUser;
+          // if (eventDt != null && user != null && !user.isAnonymous) {
+          //   // 1. サイレントサインインを試みる
+          //   GoogleSignInAccount? googleUser = await _calendarSignIn.signInSilently();
+          //   // 2. もし取得できなければインタラクティブサインイン
+          //   googleUser ??= await _calendarSignIn.signIn();
+          //   if (googleUser != null) {
+          //     Map<String, String> headers = {};
+          //     try {
+          //       if (kIsWeb) {
+          //         headers = await googleUser.authHeaders;
+          //       } else {
+          //         final googleAuth = await googleUser.authentication;
+          //         if (googleAuth.accessToken != null) {
+          //           headers = {'Authorization': 'Bearer ${googleAuth.accessToken}'};
+          //         }
+          //       }
+          //     } catch (e) {
+          //       print('認証情報取得エラー: $e');
+          //     }
+
+          //     if (headers.isNotEmpty) {
+          //       final client = GoogleHttpClient(headers);
+          //       final cal = CalendarApi(client);
+          //       final ev = Event()
+          //         ..summary = snippet
+          //         ..start = EventDateTime(dateTime: eventDt.toUtc(), timeZone: 'UTC')
+          //         ..end   = EventDateTime(
+          //           dateTime: eventDt.add(Duration(hours: 1)).toUtc(),
+          //           timeZone: 'UTC',
+          //         );
+          //       try {
+          //         await cal.events.insert(ev, 'primary');
+          //         print('Googleカレンダーにイベントを追加しました');
+          //       } catch (e) {
+          //           print('カレンダー登録エラー: $e');
+          //         }
+          //       } else {
+          //         print('カレンダー用の認証情報が取得できませんでした。');
+          //       }
+          //     }
+            // }
 
           // 保存が完了したらマップから削除
           _pendingKeywordData.remove(uniqueKey);
@@ -338,7 +475,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('taskEcho'),
+        title: Text('TaskEcho'),
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
