@@ -97,6 +97,43 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   // 遅延保存用のデータを保持するマップ
   Map<String, DelayedKeywordData> _pendingKeywordData = {};
 
+  // フレーズ変更時の更新処理
+  void _updatePhraseIfNeeded(String newRecognizedText, String selectedClass,
+      TextsDataProvider textsDataProvider) {
+    if (_previousRecognizedText != newRecognizedText &&
+        newRecognizedText.length > 5) {
+      // 新しいテキストの最初の5文字を取得
+      String newPrefix = newRecognizedText.substring(0, 5);
+
+      // 現在のフレーズの最初の5文字が変わったかチェック
+      if (_currentPhrasePrefix != newPrefix) {
+        // 新しいフレーズに変わった！
+
+        // 前のフレーズの最終版があれば更新
+        if (_pendingText.isNotEmpty) {
+          textsDataProvider.addRecognizedText(selectedClass, _pendingText);
+          textsDataProvider.addSummarizedText(selectedClass, _pendingText);
+          // print("前のフレーズの最終版を更新しました: $_pendingText");
+        }
+
+        // 新しいフレーズの情報を保存
+        _currentPhrasePrefix = newPrefix;
+        _pendingText = newRecognizedText;
+        _previousRecognizedText = newRecognizedText;
+        // print("新しいフレーズを検出しました: $newRecognizedText (保留中)");
+      } else {
+        // 同じフレーズの延長
+        _pendingText = newRecognizedText; // より長いバージョンを保持
+        _previousRecognizedText = newRecognizedText;
+        // print("同じフレーズの延長のため、保留中テキストを更新: $newRecognizedText");
+      }
+    } else if (_previousRecognizedText == newRecognizedText) {
+      // print("同じテキストが連続しているため、更新をスキップします。");
+    } else {
+      // print("5文字未満のため、更新をスキップします。");
+    }
+  }
+
   // キーワード検出時に1分後にDBに保存するための関数
   void saveKeywordWithDelay(
       String text,
@@ -340,38 +377,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         // ...existing code...
 
         // 📝 Providerのデータを更新（フレーズ変更時に前のフレーズの最終版を更新）
-        if (_previousRecognizedText != newRecognizedText &&
-            newRecognizedText.length > 5) {
-          // 新しいテキストの最初の5文字を取得
-          String newPrefix = newRecognizedText.substring(0, 5);
-
-          // 現在のフレーズの最初の5文字が変わったかチェック
-          if (_currentPhrasePrefix != newPrefix) {
-            // 新しいフレーズに変わった！
-
-            // 前のフレーズの最終版があれば更新
-            if (_pendingText.isNotEmpty) {
-              textsDataProvider.addRecognizedText(selectedClass, _pendingText);
-              textsDataProvider.addSummarizedText(selectedClass, _pendingText);
-              print("前のフレーズの最終版を更新しました: $_pendingText");
-            }
-
-            // 新しいフレーズの情報を保存
-            _currentPhrasePrefix = newPrefix;
-            _pendingText = newRecognizedText;
-            _previousRecognizedText = newRecognizedText;
-            print("新しいフレーズを検出しました: $newRecognizedText (保留中)");
-          } else {
-            // 同じフレーズの延長
-            _pendingText = newRecognizedText; // より長いバージョンを保持
-            _previousRecognizedText = newRecognizedText;
-            print("同じフレーズの延長のため、保留中テキストを更新: $newRecognizedText");
-          }
-        } else if (_previousRecognizedText == newRecognizedText) {
-          print("同じテキストが連続しているため、更新をスキップします。");
-        } else {
-          print("5文字未満のため、更新をスキップします。");
-        }
+        _updatePhraseIfNeeded(
+            newRecognizedText, selectedClass, textsDataProvider);
 
 // ...existing code...
 

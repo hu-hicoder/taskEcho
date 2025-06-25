@@ -53,7 +53,13 @@ class ClassDetailPage extends StatelessWidget {
                       builder: (BuildContext context) {
                         return AlertDialog(
                           title: Text('詳細'),
-                          content: Text(recognizedTexts[reverseIndex], style: TextStyle(fontSize: 24)),
+                          content: Container(
+                            width: double.maxFinite,
+                            child: SingleChildScrollView(
+                              child: Text(recognizedTexts[reverseIndex],
+                                  style: TextStyle(fontSize: 24)),
+                            ),
+                          ),
                           actions: [
                             TextButton(
                               onPressed: () {
