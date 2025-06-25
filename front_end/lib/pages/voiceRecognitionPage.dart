@@ -2,7 +2,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_speech_to_text/services/googleCalendarService.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:googleapis/calendar/v3.dart' show CalendarApi, Event, EventDateTime;
+import 'package:googleapis/calendar/v3.dart'
+    show CalendarApi, Event, EventDateTime;
 import 'basePage.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -81,6 +82,9 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
   // キーワード保存のクールダウン時間（秒）
   final int _keywordSaveCooldown = 60;
   int maxWords = 100; // 最大文字数を設定
+  String _previousRecognizedText = ""; // 前回の認識テキストを保持
+  String _pendingText = ""; // 保留中のテキスト（同じフレーズの最終版を保持）
+  String _currentPhrasePrefix = ""; // 現在のフレーズの最初の5文字
 
   @override
   void dispose() {
@@ -112,7 +116,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         now.difference(lastSaved).inSeconds > _keywordSaveCooldown) {
       // 保存時間を更新（重複防止のため先に記録）
       _lastSavedKeywords[uniqueKey] = now;
-      
+
       // 保存予定のデータを記録
       _pendingKeywordData[uniqueKey] = DelayedKeywordData(
         keyword: keyword,
@@ -120,7 +124,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
         detectionTime: now,
         initialText: text,
       );
-      
+
       print('キーワード "$keyword" を検出: 1分後に保存します');
 
       // 1分後に保存を実行
@@ -133,17 +137,18 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             print('キーワード "$keyword" の保存データが見つかりません');
             return;
           }
-          
+
           // 結合テキストまたは現在の認識テキストを取得（1分後の状態）
           String combinedText = recognitionProvider.combinedText;
           String currentText = recognitionProvider.lastWords;
-          
+
           // 結合テキスト、現在のテキスト、1分前のテキストを比較し、最も情報量の多いテキストを使用
-          String textToUse = combinedText.isNotEmpty ? combinedText : 
-              (currentText.length > keywordData.initialText.length 
-                  ? currentText 
+          String textToUse = combinedText.isNotEmpty
+              ? combinedText
+              : (currentText.length > keywordData.initialText.length
+                  ? currentText
                   : keywordData.initialText);
-          
+
           // キーワードを含むスニペットを抽出
           String snippet = await recognitionProvider
               .extractSnippetWithKeyword(textToUse, [keyword]);
@@ -159,7 +164,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           DateTime? eventDt;
 
           // 1. 相対日＋時刻：「今日」「明日」「明後日」
-          final rel = RegExp(r'(今日|明日|明後日)(?:\s*(\d{1,2}:\d{2}))?').firstMatch(snippet);
+          final rel =
+              RegExp(r'(今日|明日|明後日)(?:\s*(\d{1,2}:\d{2}))?').firstMatch(snippet);
           if (rel != null) {
             int days = rel.group(1) == '明日'
                 ? 1
@@ -169,17 +175,21 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             final base = now.add(Duration(days: days));
             if (rel.group(2) != null) {
               final p = rel.group(2)!.split(':');
-              eventDt = DateTime(base.year, base.month, base.day, int.parse(p[0]), int.parse(p[1]));
+              eventDt = DateTime(base.year, base.month, base.day,
+                  int.parse(p[0]), int.parse(p[1]));
             } else {
               eventDt = DateTime(base.year, base.month, base.day, 9, 0);
             }
           }
           // 2. 「YYYY/MM/DD [HH:mm]」
           else {
-            final ymd = RegExp(r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:\s*(\d{1,2}:\d{2}))?')
+            final ymd = RegExp(
+                    r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:\s*(\d{1,2}:\d{2}))?')
                 .firstMatch(snippet);
             if (ymd != null) {
-              final y = int.parse(ymd.group(1)!), m = int.parse(ymd.group(2)!), d = int.parse(ymd.group(3)!);
+              final y = int.parse(ymd.group(1)!),
+                  m = int.parse(ymd.group(2)!),
+                  d = int.parse(ymd.group(3)!);
               if (ymd.group(4) != null) {
                 final p = ymd.group(4)!.split(':');
                 eventDt = DateTime(y, m, d, int.parse(p[0]), int.parse(p[1]));
@@ -195,7 +205,8 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 final m = int.parse(md.group(1)!), d = int.parse(md.group(2)!);
                 if (md.group(3) != null) {
                   final p = md.group(3)!.split(':');
-                  eventDt = DateTime(now.year, m, d, int.parse(p[0]), int.parse(p[1]));
+                  eventDt = DateTime(
+                      now.year, m, d, int.parse(p[0]), int.parse(p[1]));
                 } else {
                   eventDt = DateTime(now.year, m, d, 9, 0);
                 }
@@ -205,26 +216,27 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 final t = RegExp(r'(\d{1,2}:\d{2})').firstMatch(snippet);
                 if (t != null) {
                   final p = t.group(1)!.split(':');
-                  eventDt = DateTime(now.year, now.month, now.day, int.parse(p[0]), int.parse(p[1]));
+                  eventDt = DateTime(now.year, now.month, now.day,
+                      int.parse(p[0]), int.parse(p[1]));
                 }
               }
             }
           }
 
           if (eventDt != null && FirebaseAuth.instance.currentUser != null) {
-          try {
-            final service = GoogleCalendarService();
-            await service.createEvent(
-              eventTime: eventDt,
-              summary: snippet,
-              duration: Duration(hours: 1),
-              timeZone: 'Asia/Tokyo',
-            );
-            print('Googleカレンダーにイベントを追加しました');
-          } catch (e) {
-            print('カレンダー登録エラー: $e');
+            try {
+              final service = GoogleCalendarService();
+              await service.createEvent(
+                eventTime: eventDt,
+                summary: snippet,
+                duration: Duration(hours: 1),
+                timeZone: 'Asia/Tokyo',
+              );
+              print('Googleカレンダーにイベントを追加しました');
+            } catch (e) {
+              print('カレンダー登録エラー: $e');
+            }
           }
-        }
 
           // // Google カレンダー登録
           // final user = FirebaseAuth.instance.currentUser;
@@ -268,7 +280,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
           //         print('カレンダー用の認証情報が取得できませんでした。');
           //       }
           //     }
-            // }
+          // }
 
           // 保存が完了したらマップから削除
           _pendingKeywordData.remove(uniqueKey);
@@ -305,28 +317,63 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       if (newRecognizedText.isNotEmpty) {
         // 要約処理だけど今のところそのまま返す
         String newSummarizedText = "";
-        
+
         // 結合テキストを使用してキーワード検出
-        String textForKeywordDetection = recognitionProvider.combinedText.isNotEmpty 
-            ? recognitionProvider.combinedText 
-            : newRecognizedText;
-        
+        String textForKeywordDetection =
+            recognitionProvider.combinedText.isNotEmpty
+                ? recognitionProvider.combinedText
+                : newRecognizedText;
+
         // キーワード検出（結合テキストを使用）
         List<String> keywords = keywordProvider.keywords;
         detectedKeywords =
             keywords.where((k) => textForKeywordDetection.contains(k)).toList();
         existKeyword = detectedKeywords.isNotEmpty;
 
-        if (newRecognizedText.length > maxWords) {
+        /* if (newRecognizedText.length > maxWords) {
           // print("文字数が${maxWords}を超えています。切り取ります。");
           newRecognizedText = newRecognizedText.substring(
               newRecognizedText.length - maxWords,
               newRecognizedText.length); // 指定した文字数で切る
+        } */
+
+        // ...existing code...
+
+        // 📝 Providerのデータを更新（フレーズ変更時に前のフレーズの最終版を更新）
+        if (_previousRecognizedText != newRecognizedText &&
+            newRecognizedText.length > 5) {
+          // 新しいテキストの最初の5文字を取得
+          String newPrefix = newRecognizedText.substring(0, 5);
+
+          // 現在のフレーズの最初の5文字が変わったかチェック
+          if (_currentPhrasePrefix != newPrefix) {
+            // 新しいフレーズに変わった！
+
+            // 前のフレーズの最終版があれば更新
+            if (_pendingText.isNotEmpty) {
+              textsDataProvider.addRecognizedText(selectedClass, _pendingText);
+              textsDataProvider.addSummarizedText(selectedClass, _pendingText);
+              print("前のフレーズの最終版を更新しました: $_pendingText");
+            }
+
+            // 新しいフレーズの情報を保存
+            _currentPhrasePrefix = newPrefix;
+            _pendingText = newRecognizedText;
+            _previousRecognizedText = newRecognizedText;
+            print("新しいフレーズを検出しました: $newRecognizedText (保留中)");
+          } else {
+            // 同じフレーズの延長
+            _pendingText = newRecognizedText; // より長いバージョンを保持
+            _previousRecognizedText = newRecognizedText;
+            print("同じフレーズの延長のため、保留中テキストを更新: $newRecognizedText");
+          }
+        } else if (_previousRecognizedText == newRecognizedText) {
+          print("同じテキストが連続しているため、更新をスキップします。");
+        } else {
+          print("5文字未満のため、更新をスキップします。");
         }
 
-        // 📝 Providerのデータを更新
-        textsDataProvider.addRecognizedText(selectedClass, newRecognizedText);
-        textsDataProvider.addSummarizedText(selectedClass, newSummarizedText);
+// ...existing code...
 
         // 🔄 リストの更新
         setState(() {
@@ -455,6 +502,22 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
     if (!recognitionProvider.isRecognizing) {
       print("⚠️ 音声認識は開始されていません。");
       return;
+    }
+
+    // 最後の保留中テキストがあれば保存
+    if (_pendingText.isNotEmpty) {
+      final textsDataProvider =
+          Provider.of<TextsDataProvider>(context, listen: false);
+      final selectedClass =
+          Provider.of<ClassProvider>(context, listen: false).selectedClass;
+
+      textsDataProvider.addRecognizedText(selectedClass, _pendingText);
+      textsDataProvider.addSummarizedText(selectedClass, _pendingText);
+      print("音声認識停止時に最後のフレーズを保存しました: $_pendingText");
+
+      // リセット
+      _pendingText = "";
+      _currentPhrasePrefix = "";
     }
 
     recognitionProvider.stopListening(); // 音声認識を停止
