@@ -11,14 +11,19 @@ void showKeywordSettingDialog(BuildContext context) {
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: Text('キーワードの設定'),
+            backgroundColor: Colors.grey[850],
+            title: Text(
+              'キーワードの設定',
+              style: TextStyle(color: Colors.white),
+            ),
             content: Container(
-              width: MediaQuery.of(context).size.width * 0.5,
+              width: MediaQuery.of(context).size.width * 0.8,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // キーワードの一覧を表示
-                  Expanded(
+                  Container(
+                    height: 200, // 固定高さを設定
                     child: Consumer<KeywordProvider>(
                       builder: (context, keywordProvider, child) {
                         return ListView.builder(
@@ -26,7 +31,10 @@ void showKeywordSettingDialog(BuildContext context) {
                           itemCount: keywordProvider.keywords.length,
                           itemBuilder: (context, index) {
                             return ListTile(
-                              title: Text(keywordProvider.keywords[index]),
+                              title: Text(
+                                keywordProvider.keywords[index],
+                                style: TextStyle(color: Colors.white),
+                              ),
                               trailing: IconButton(
                                 icon:
                                     Icon(Icons.delete, color: Colors.redAccent),
@@ -43,7 +51,19 @@ void showKeywordSettingDialog(BuildContext context) {
                   ),
                   TextField(
                     controller: keywordController,
-                    decoration: InputDecoration(hintText: "新しいキーワードを入力"),
+                    decoration: InputDecoration(
+                      hintText: "新しいキーワードを入力",
+                      hintStyle: TextStyle(color: Colors.white70),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white70),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.cyanAccent),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    style: TextStyle(color: Colors.white),
                   ),
                   SizedBox(height: 8), // テキストフィールドと注意書きの間にスペースを追加
                   /* Align(
@@ -61,9 +81,12 @@ void showKeywordSettingDialog(BuildContext context) {
                 onPressed: () {
                   Navigator.of(context).pop(); // ダイアログを閉じる
                 },
-                child: Text("閉じる"),
+                child: Text(
+                  "閉じる",
+                  style: TextStyle(color: Colors.white70),
+                ),
               ),
-              TextButton(
+              ElevatedButton(
                 onPressed: () {
                   // 新しいキーワードを追加
                   if (keywordController.text.isNotEmpty) {
@@ -73,7 +96,16 @@ void showKeywordSettingDialog(BuildContext context) {
                     keywordController.clear();
                   }
                 },
-                child: Text("追加"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.cyanAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: Text(
+                  "追加",
+                  style: TextStyle(color: Colors.black),
+                ),
               ),
               /* TextButton(
                 onPressed: () async {
