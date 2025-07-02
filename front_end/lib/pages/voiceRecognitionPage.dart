@@ -6,6 +6,7 @@ import '../providers/classProvider.dart';
 import '../providers/recognitionProvider.dart';
 import '../providers/keywordProvider.dart';
 import '../dialogs/settingDialog.dart';
+import '../dialogs/keywordSettingDialog.dart';
 import '../services/voiceRecognitionUIService.dart';
 import '../widgets/voiceRecognitionWidgets.dart';
 import '/auth/googleSignIn.dart';
@@ -17,6 +18,12 @@ class VoiceRecognitionPage extends StatefulWidget {
 }
 
 class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
+  // キーワード設定ダイアログを表示する関数
+  void _showKeywordDialog(
+      BuildContext context, KeywordProvider keywordProvider) {
+    showKeywordSettingDialog(context);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
@@ -89,6 +96,9 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                                 keywordProvider: keywordProvider,
                                 existKeyword:
                                     uiService.existKeyword, // キーワード存在フラグを追加
+                                onKeywordSettingsPressed: () {
+                                  _showKeywordDialog(context, keywordProvider);
+                                },
                               ),
                               SizedBox(height: 20),
                               // クラス選択ドロップダウン

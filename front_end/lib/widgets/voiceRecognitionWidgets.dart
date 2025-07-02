@@ -112,6 +112,7 @@ class VoiceRecognitionWidgets {
     required String keyword,
     required KeywordProvider keywordProvider,
     bool existKeyword = false, // キーワード存在フラグを追加
+    required VoidCallback onKeywordSettingsPressed, // コールバック関数を追加
   }) {
     return Container(
       padding: EdgeInsets.all(16.0),
@@ -156,6 +157,7 @@ class VoiceRecognitionWidgets {
                       color: Colors.white70,
                     ),
                   ),
+                  SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: keywordProvider.keywords
@@ -169,6 +171,26 @@ class VoiceRecognitionWidgets {
                 ],
               ),
             ),
+          SizedBox(height: 12),
+          // キーワード設定ボタンを復活！
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: onKeywordSettingsPressed,
+              icon: Icon(Icons.edit, color: Colors.black),
+              label: Text(
+                "キーワード設定",
+                style: TextStyle(color: Colors.black),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.orangeAccent,
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 5,
+              ),
+            ),
+          ),
         ],
       ),
     );
