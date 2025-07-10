@@ -1,3 +1,1 @@
-/assets
-.env
-token.json
+/assets/.env

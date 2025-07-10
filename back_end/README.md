@@ -1,0 +1,1 @@
+assets/.envにGEMINI_API_KEYを設定
