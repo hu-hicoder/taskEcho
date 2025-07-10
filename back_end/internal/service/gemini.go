@@ -3,15 +3,10 @@ package service
 import (
 	"context"
 	"fmt"
-	"log"
-	"net/http"
 	"os"
 
-	"google.golang.org/genai"
 	"google.golang.org/api/option"
-
-	"taskEcho/back_end/assets"
-	"taskEcho/back_end/router"
+	"google.golang.org/genai"
 )
 
 func GetGeminiAPIKey() string {
