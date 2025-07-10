@@ -4,8 +4,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/joho/godotenv"
 	"taskEcho/back_end/router"
+
+	"github.com/joho/godotenv"
 )
 
 func main() {
@@ -16,8 +17,8 @@ func main() {
 	}
 
 	r := router.NewRouter()
-	log.Println("Server started at :5000")
-	if err := http.ListenAndServe(":5000", r); err != nil {
+	log.Println("Server started at :8080")
+	if err := http.ListenAndServe(":8080", r); err != nil {
 		log.Fatal(err)
 	}
 }

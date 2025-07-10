@@ -1,42 +1,93 @@
 package service
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"fmt"
-	"os"
-
-	"google.golang.org/api/option"
-	"google.golang.org/genai"
+	"io"
+	"net/http"
 )
 
-func GetGeminiAPIKey() string {
-	return os.Getenv("GEMINI_API_KEY")
+type GeminiRequest struct {
+	Contents []Contents `json:"contents"`
 }
 
-func GetSummaryFromGemini(prompt string) (string, error) {
-	apiKey := GetGeminiAPIKey()
+type Contents struct {
+	Parts []Parts `json:"parts"`
+}
+
+type Parts struct {
+	Text string `json:"text"`
+}
+
+type GeminiResponse struct {
+	Candidates []Candidate `json:"candidates"`
+}
+
+type Candidate struct {
+	Content Content `json:"content"`
+}
+
+type Content struct {
+	Parts []ResponsePart `json:"parts"`
+}
+
+type ResponsePart struct {
+	Text string `json:"text"`
+}
+
+func GetSummaryFromGeminiWithKey(prompt, apiKey string) (string, error) {
 	if apiKey == "" {
 		return "", fmt.Errorf("GEMINI_API_KEY is not set")
 	}
 
-	ctx := context.Background()
-	client, err := genai.NewClient(ctx, option.WithAPIKey(apiKey))
-	if err != nil {
-		return "", err
-	}
-	defer client.Close()
+	// Gemini API URL
+	url := fmt.Sprintf("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=%s", apiKey)
 
-	model := client.GenerativeModel("gemini-2.5-flash")
-	resp, err := model.GenerateContent(ctx, genai.Text(prompt))
-	if err != nil {
-		return "", err
+	// リクエストボディを作成
+	reqBody := GeminiRequest{
+		Contents: []Contents{
+			{
+				Parts: []Parts{
+					{
+						Text: fmt.Sprintf("以下のテキストを簡潔に要約してください：\n%s", prompt),
+					},
+				},
+			},
+		},
 	}
 
-	// 結果の取り出し
-	if len(resp.Candidates) > 0 && len(resp.Candidates[0].Content.Parts) > 0 {
-		if textPart, ok := resp.Candidates[0].Content.Parts[0].(genai.TextPart); ok {
-			return textPart.Text, nil
-		}
+	jsonData, err := json.Marshal(reqBody)
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal request: %v", err)
+	}
+
+	// HTTPリクエストを送信
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", fmt.Errorf("failed to send request: %v", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("API request failed with status %d: %s", resp.StatusCode, string(body))
+	}
+
+	// レスポンスをパース
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response: %v", err)
+	}
+
+	var geminiResp GeminiResponse
+	if err := json.Unmarshal(body, &geminiResp); err != nil {
+		return "", fmt.Errorf("failed to unmarshal response: %v", err)
+	}
+
+	// レスポンスから要約を取得
+	if len(geminiResp.Candidates) > 0 && len(geminiResp.Candidates[0].Content.Parts) > 0 {
+		return geminiResp.Candidates[0].Content.Parts[0].Text, nil
 	}
 
 	return "", fmt.Errorf("no summary returned")
