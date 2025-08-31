@@ -7,7 +7,11 @@ void showSettingsDialog(BuildContext context) {
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        title: Text('設定'),
+        backgroundColor: Colors.grey[850],
+        title: Text(
+          '設定',
+          style: TextStyle(color: Colors.white),
+        ),
         content: SingleChildScrollView(
           child: ListBody(
             children: <Widget>[
@@ -54,7 +58,10 @@ void showSettingsDialog(BuildContext context) {
             onPressed: () {
               Navigator.of(context).pop(); // ダイアログを閉じる
             },
-            child: Text('閉じる'),
+            child: Text(
+              '閉じる',
+              style: TextStyle(color: Colors.white70),
+            ),
           ),
         ],
       );
