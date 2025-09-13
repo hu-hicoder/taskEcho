@@ -8,7 +8,7 @@ import (
 )
 
 // Gemini APIで要約を取得する（公式SDKドキュメント準拠）
-func GetSummaryFromGeminiWithKey(prompt, apiKey string) (string, error) {
+func GetSummaryFromGeminiWithKey(text, keyword, apiKey string) (string, error) {
 	if apiKey == "" {
 		return "", fmt.Errorf("GEMINI_API_KEY is not set")
 	}
@@ -22,6 +22,7 @@ func GetSummaryFromGeminiWithKey(prompt, apiKey string) (string, error) {
 		return "", fmt.Errorf("failed to create Gemini client: %v", err)
 	}
 
+	prompt := fmt.Sprintf("以下の文を%sについて要約してください: %s", keyword, text)
 	result, err := client.Models.GenerateContent(
 		ctx,
 		"gemini-2.5-flash",

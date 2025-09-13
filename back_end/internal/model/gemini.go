@@ -1,5 +1,11 @@
 package model
 
+// API リクエスト用構造体
+type SummarizeRequest struct {
+	Text    string `json:"text"`
+	Keyword string `json:"keyword"`
+}
+
 // Gemini APIリクエスト用構造体
 type GeminiRequest struct {
 	Contents []Contents `json:"contents"`
