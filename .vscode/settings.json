@@ -1,3 +1,28 @@
 {
-    "cmake.sourceDirectory": "C:/Users/28oso/Documents/hackathon/jphack/geek/taskEcho/front_end/linux"
+    "cmake.sourceDirectory": "C:/Users/28oso/Documents/hackathon/jphack/geek/taskEcho/front_end/linux",
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Go: Backend Debug",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/back_end/cmd/api",
+            "envFile": "${workspaceFolder}/back_end/assets/.env"
+        },
+        {
+            "name": "Flutter: macOS Debug",
+            "type": "dart",
+            "request": "launch",
+            "program": "${workspaceFolder}/front_end/lib/main.dart",
+            "deviceId": "macos"
+        },
+        {
+            "name": "Flutter: Chrome Debug",
+            "type": "dart",
+            "request": "launch",
+            "program": "${workspaceFolder}/front_end/lib/main.dart",
+            "deviceId": "chrome"
+        }
+    ]
 }
