@@ -43,10 +43,12 @@ class RecognitionObject {
 /// バックエンドAPIへの要約リクエスト用モデル
 class SummarizeRequest {
   final String text;
+  final String? keyword;  // この行を追加
   final int? maxLength;
 
   SummarizeRequest({
     required this.text,
+    this.keyword,  // この行を追加
     this.maxLength,
   });
 
@@ -54,6 +56,7 @@ class SummarizeRequest {
   Map<String, dynamic> toJson() {
     return {
       'text': text,
+      if (keyword != null) 'keyword': keyword,  // この行を追加
       if (maxLength != null) 'max_length': maxLength,
     };
   }
