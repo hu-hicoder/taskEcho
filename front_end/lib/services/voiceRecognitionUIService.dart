@@ -79,9 +79,8 @@ class VoiceRecognitionUIService extends ChangeNotifier {
               recognitionProvider,
             );
           }
-        } else {
-          stopFlashing();
         }
+        // 注: 点滅は10秒の自動停止タイマー (autoResetTimer) で管理される
 
         // UIの更新を通知
         notifyListeners();
