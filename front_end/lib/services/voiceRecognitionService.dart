@@ -306,6 +306,9 @@ class VoiceRecognitionService {
   ) {
     String newSummarizedText = "";
 
+    // フレーズ変更時に前のフレーズの最終版を更新（キーワード検出より先に実行）
+    updatePhraseIfNeeded(newRecognizedText, selectedClass, textsDataProvider);
+
     // 結合テキストを使用してキーワード検出
     String textForKeywordDetection = recognitionProvider.combinedText.isNotEmpty
         ? recognitionProvider.combinedText
@@ -325,9 +328,6 @@ class VoiceRecognitionService {
     _detectedKeywordsInCurrentPhrase.addAll(newKeywords);
 
     bool existKeyword = newKeywords.isNotEmpty; // 新規キーワードがあるかチェック
-
-    // フレーズ変更時に前のフレーズの最終版を更新
-    updatePhraseIfNeeded(newRecognizedText, selectedClass, textsDataProvider);
 
     return ProcessedData(
       recognizedText: newRecognizedText,
