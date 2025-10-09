@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer';
 import 'dart:async';
 import 'package:permission_handler/permission_handler.dart';
-import '../services/geminiService.dart';
+import '../services/summaryService.dart';
 
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
@@ -30,8 +30,7 @@ class RecognitionProvider with ChangeNotifier {
   RecognitionProvider() {
     _initSpeech();
     _startCacheClearTimer();
-    // GeminiServiceの初期化
-    GeminiService.initialize();
+    // SummaryServiceの設定は自動初期化されるため、明示的な初期化は不要
   }
 
   Future<void> saveKeywords(List<String> keywords) async {
@@ -190,10 +189,10 @@ class RecognitionProvider with ChangeNotifier {
     // UIコンポーネントでKeywordProviderを使用して検出する
   }
 
-  /// テキストからキーワードを含む部分の前後の文脈を抽出し、GeminiServiceで要約する
+  /// テキストからキーワードを含む部分の前後の文脈を抽出し、SummaryServiceで要約する
   Future<String> extractSnippetWithKeyword(String text, List<String> keywords) async {
-    // GeminiServiceを使用してキーワード周辺テキストの抽出・要約を実行
-    return await GeminiService.extractAndSummarize(
+    // SummaryServiceを使用してキーワード周辺テキストの抽出・要約を実行
+    return await SummaryService.extractAndSummarize(
       _combinedText.isNotEmpty ? _combinedText : text,
       keywords,
     );

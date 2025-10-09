@@ -11,6 +11,9 @@ import (
 func NewRouter() *mux.Router {
 	r := mux.NewRouter()
 
+	// CORSミドルウェアを全体に適用
+	r.Use(middleware.CORSHandler)
+
 	// 要約エンドポイント
 	r.HandleFunc("/summarize", middleware.Authenticate(handler.SummarizeHandler)).Methods(http.MethodPost)
 
