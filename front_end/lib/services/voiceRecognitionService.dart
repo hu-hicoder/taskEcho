@@ -55,6 +55,9 @@ class VoiceRecognitionService {
   // 遅延保存用のデータを保持するマップ
   Map<String, DelayedKeywordData> _pendingKeywordData = {};
 
+  // 現在のフレーズで検出済みのキーワード（点滅の重複防止用）
+  Set<String> _detectedKeywordsInCurrentPhrase = {};
+
   // フレーズ管理用の変数
   String _previousRecognizedText = "";
   String _pendingText = "";
@@ -75,6 +78,9 @@ class VoiceRecognitionService {
       // 現在のフレーズの最初の5文字が変わったかチェック
       if (_currentPhrasePrefix != newPrefix) {
         // 新しいフレーズに変わった！
+
+        // 新しいフレーズになったので検出済みキーワードをリセット
+        _detectedKeywordsInCurrentPhrase.clear();
 
         // 前のフレーズの最終版があれば更新
         if (_pendingText.isNotEmpty) {
@@ -285,6 +291,9 @@ class VoiceRecognitionService {
       _pendingText = "";
       _currentPhrasePrefix = "";
     }
+
+    // 音声認識停止時に検出済みキーワードもリセット
+    _detectedKeywordsInCurrentPhrase.clear();
   }
 
   // 音声認識データの処理
@@ -297,6 +306,9 @@ class VoiceRecognitionService {
   ) {
     String newSummarizedText = "";
 
+    // フレーズ変更時に前のフレーズの最終版を更新（キーワード検出より先に実行）
+    updatePhraseIfNeeded(newRecognizedText, selectedClass, textsDataProvider);
+
     // 結合テキストを使用してキーワード検出
     String textForKeywordDetection = recognitionProvider.combinedText.isNotEmpty
         ? recognitionProvider.combinedText
@@ -306,15 +318,21 @@ class VoiceRecognitionService {
     List<String> keywords = keywordProvider.keywords;
     List<String> detectedKeywords =
         keywords.where((k) => textForKeywordDetection.contains(k)).toList();
-    bool existKeyword = detectedKeywords.isNotEmpty;
 
-    // フレーズ変更時に前のフレーズの最終版を更新
-    updatePhraseIfNeeded(newRecognizedText, selectedClass, textsDataProvider);
+    // 新規検出のキーワードのみを抽出（既に検出済みのものは除外）
+    List<String> newKeywords = detectedKeywords
+        .where((k) => !_detectedKeywordsInCurrentPhrase.contains(k))
+        .toList();
+
+    // 新規キーワードを検出済みセットに追加
+    _detectedKeywordsInCurrentPhrase.addAll(newKeywords);
+
+    bool existKeyword = newKeywords.isNotEmpty; // 新規キーワードがあるかチェック
 
     return ProcessedData(
       recognizedText: newRecognizedText,
       summarizedText: newSummarizedText,
-      detectedKeywords: detectedKeywords,
+      detectedKeywords: newKeywords, // 新規キーワードのみを返す
       hasKeyword: existKeyword,
     );
   }
