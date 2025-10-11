@@ -33,13 +33,26 @@ func getEnv(key, defaultValue string) string {
 
 // New は新しい設定を作成する
 func New() *Config {
-	// 絶対パスで.envファイルを読み込む
-	envPath := "/Users/mikayu/developing/taskEcho/back_end/assets/.env"
-	
-	if err := godotenv.Load(envPath); err != nil {
-		log.Printf("Failed to load .env from %s: %v", envPath, err)
-	} else {
-		log.Printf("Successfully loaded .env from: %s", envPath)
+	// 複数のパスで.envファイルを試行
+	envPaths := []string{
+		"../../assets/.env", // cmd/api/ から back_end/assets/.env への相対パス
+		"./assets/.env",     // back_end/ ディレクトリから実行される場合
+		"/Users/mikayu/developing/taskEcho/back_end/assets/.env", // 絶対パス（フォールバック）
+	}
+
+	var err error
+	var loaded bool
+
+	for _, envPath := range envPaths {
+		if err = godotenv.Load(envPath); err == nil {
+			log.Printf("Successfully loaded .env from: %s", envPath)
+			loaded = true
+			break
+		}
+	}
+
+	if !loaded {
+		log.Printf("No .env file found or failed to load")
 	}
 
 	apiKey := getEnv("GEMINI_API_KEY", "")

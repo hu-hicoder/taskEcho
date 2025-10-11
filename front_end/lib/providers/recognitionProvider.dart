@@ -1,22 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
-import 'package:shared_preferences/shared_preferences.dart'; //ローカルにキーワードを保存するパッケージ
-import './keywordProvider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:developer';
 import 'dart:async';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
+import '../services/summaryService.dart';
 
 class RecognitionProvider with ChangeNotifier {
   bool _isRecognizing = false;
   bool _speechEnabled = false;
   String _lastWords = '';
-  final apiKey = dotenv.env['GEMINI_API_KEY'];
 
   // 認識テキストの履歴を保持するリスト
   List<String> _recognizedTextHistory = [];
@@ -26,9 +20,7 @@ class RecognitionProvider with ChangeNotifier {
   String _combinedText = '';
 
   final SpeechToText _speechToText = SpeechToText();
-  Gemini? _gemini; 
   Timer? _cacheClearTimer; // キャッシュクリア用のタイマー
-  bool _geminiInitialized = false; // Geminiの初期化状態を追跡
 
   bool get isRecognizing => _isRecognizing;
   bool get speechEnabled => _speechEnabled;
@@ -38,65 +30,7 @@ class RecognitionProvider with ChangeNotifier {
   RecognitionProvider() {
     _initSpeech();
     _startCacheClearTimer();
-    _initGeminiAsync(); // 非同期初期化を呼び出す
-  }
-
-  // 非同期初期化を呼び出すためのヘルパーメソッド
-  void _initGeminiAsync() {
-    _initGemini().then((_) {
-      // 初期化完了後の処理（必要に応じて）
-      if (_geminiInitialized) {
-        print('Gemini初期化が完了しました');
-      } else {
-        print('Gemini初期化に失敗しました');
-      }
-    });
-  }
-
-  /// Gemini APIの初期化
-  Future<void> _initGemini() async {
-    try {
-      if (apiKey != null) {
-        // APIキーが設定されている場合のみ初期化を試みる
-        print('Gemini APIの初期化を開始します: $apiKey');
-        
-        try {
-          Gemini.init(apiKey: apiKey!, enableDebugging: true);
-          _gemini = Gemini.instance;
-          
-          // 初期化テスト - 簡単なプロンプトを送信して応答を確認
-          final testResult = await _gemini!.text('テスト');
-          if (testResult != null && testResult.output != null) {
-            _geminiInitialized = true;
-            print('Gemini API initialized successfully: ${testResult.output}');
-          } else {
-            print('Gemini API test returned null result');
-          }
-        } catch (initError) {
-          print('Gemini API initialization specific error: $initError');
-          
-          // 別の初期化方法を試す
-          try {
-            print('Trying alternative initialization method...');
-            // 別の初期化方法を試す（configureTransportはないので代替手段）
-            Gemini.init(apiKey: apiKey!);
-            _gemini = Gemini.instance;
-            
-            final testResult = await _gemini!.text('テスト');
-            if (testResult != null && testResult.output != null) {
-              _geminiInitialized = true;
-              print('Alternative Gemini API initialization successful: ${testResult.output}');
-            }
-          } catch (altError) {
-            print('Alternative initialization also failed: $altError');
-          }
-        }
-      } else {
-        print('GEMINI_API_KEYが設定されていません。.envファイルを確認してください。');
-      }
-    } catch (e) {
-      print('Gemini API initialization error: $e');
-    }
+    // SummaryServiceの設定は自動初期化されるため、明示的な初期化は不要
   }
 
   Future<void> saveKeywords(List<String> keywords) async {
@@ -255,86 +189,13 @@ class RecognitionProvider with ChangeNotifier {
     // UIコンポーネントでKeywordProviderを使用して検出する
   }
 
-  /// テキストからキーワードを含む部分の前後の文脈を抽出し、可能であればGeminiで要約する
+  /// テキストからキーワードを含む部分の前後の文脈を抽出し、SummaryServiceで要約する
   Future<String> extractSnippetWithKeyword(String text, List<String> keywords) async {
-    // 最初に見つかったキーワードを使用
-    String keyword = keywords.first;
-    
-    // 結合テキストを使用（履歴からの情報を含む）
-    String textToSearch = _combinedText.isNotEmpty ? _combinedText : text;
-    
-    // キーワードの位置を見つける
-    int keywordIndex = textToSearch.indexOf(keyword);
-    if (keywordIndex == -1) return text; // キーワードが見つからない場合は全文を返す
-
-    // 前後の文脈を含めるための範囲を計算（前後200文字程度）
-    int startIndex = (keywordIndex - 200) < 0 ? 0 : keywordIndex - 200;
-    int endIndex = (keywordIndex + keyword.length + 200) > textToSearch.length
-        ? textToSearch.length
-        : keywordIndex + keyword.length + 200;
-    
-    // 抽出したテキスト
-    String extractedText = textToSearch.substring(startIndex, endIndex);
-    String resultText = "【キーワード「$keyword」の周辺テキスト】: $extractedText";
-    
-    // ネットワーク接続がない場合やGeminiが初期化されていない場合は、
-    // 抽出したテキストをそのまま返す（フォールバック）
-    if (apiKey == null || !_geminiInitialized || _gemini == null) {
-      print('Gemini APIが使用できないため、要約をスキップします。');
-      return resultText;
-    }
-    
-    // Geminiによる要約を試みる（ネットワークエラーなどに対応）
-    try {
-      // Gemini APIに要約を依頼するプロンプト
-      String prompt = '''
-以下のテキストを要約してください。キーワード「$keyword」に関連する重要な情報を保持しつつ、簡潔にまとめてください。
-テキスト: $extractedText
-''';
-      
-      // タイムアウト付きでGemini APIを呼び出す
-      final resultFuture = _gemini!.text(prompt);
-      final result = await resultFuture.timeout(
-        Duration(seconds: 5),
-        onTimeout: () {
-          print('Gemini API呼び出しがタイムアウトしました。');
-          return null;
-        },
-      );
-      
-      if (result != null && result.output != null && result.output!.isNotEmpty) {
-        print('Geminiによる要約: ${result.output}');
-        return "【キーワード「$keyword」の要約】: ${result.output}";
-      }
-    } catch (e) {
-      print('Gemini API呼び出し中にエラーが発生しました: $e');
-      // エラーが発生した場合は元のテキストを返す（フォールバック）
-    }
-    
-    // Geminiが使えない場合や要約に失敗した場合は、抽出したテキストをそのまま返す
-    return resultText;
-  }
-
-  /// バックエンドにデータを送信する
-  Future<void> _sendToBackend(String snippet, List<String> keywords) async {
-    try {
-      final response = await http.post(
-        Uri.parse('http://localhost:5000/process_text'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'text': snippet,
-          'keywords': keywords,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        print('バックエンドにデータを送信しました: $snippet');
-      } else {
-        print('バックエンドへのデータ送信に失敗しました: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('バックエンドへのデータ送信中にエラーが発生しました: $e');
-    }
+    // SummaryServiceを使用してキーワード周辺テキストの抽出・要約を実行
+    return await SummaryService.extractAndSummarize(
+      _combinedText.isNotEmpty ? _combinedText : text,
+      keywords,
+    );
   }
 
   /// クラスが破棄されるときにタイマーをキャンセル
