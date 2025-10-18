@@ -131,7 +131,7 @@ class VoiceRecognitionService {
       print('キーワード "$keyword" を検出: 1分後に保存します');
 
       // 1分後に保存を実行
-      Future.delayed(Duration(seconds: 60), () async {
+      Future.delayed(Duration(seconds: 20), () async {
         await _executeDelayedSave(
             uniqueKey, keyword, keywordProvider, recognitionProvider);
       });

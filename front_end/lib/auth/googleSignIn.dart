@@ -7,13 +7,9 @@ import 'package:googleapis/calendar/v3.dart' show CalendarApi;
 class GoogleAuth {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
   static final GoogleSignIn _googleSignIn = GoogleSignIn(
-    clientId: dotenv.env['GOOGLE_CLIENT_ID'], // 環境変数からクライアントIDを取得
-    scopes: [
-      'email',
-      'profile',
-      CalendarApi.calendarScope
-    ]
-  );
+      serverClientId:
+          dotenv.env['GOOGLE_CLIENT_ID'], // AndroidではserverClientIdを使用
+      scopes: ['email', 'profile', CalendarApi.calendarScope]);
 
   // サイレントサインインを試みる
   static Future<User?> signInWithGoogle() async {
@@ -22,7 +18,7 @@ class GoogleAuth {
         final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
         if (googleUser == null) {
           print("Silent Sign-In failed: No previous session found.");
-          return null; // 
+          return null; //
         }
 
         // Google認証情報を取得

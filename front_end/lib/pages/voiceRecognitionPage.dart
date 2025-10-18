@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'basePage.dart';
 import '../providers/classProvider.dart';
 import '../providers/recognitionProvider.dart';
 import '../providers/keywordProvider.dart';
-import '../dialogs/settingDialog.dart';
-import '../dialogs/keywordSettingDialog.dart';
 import '../services/voiceRecognitionUIService.dart';
 import '../widgets/voiceRecognitionWidgets.dart';
+import '../models/calendar_event_proposal.dart';
 import '/auth/googleSignIn.dart';
 import 'signIn.dart';
+import 'keywordHistoryPage.dart';
 
 class VoiceRecognitionPage extends StatefulWidget {
   @override
@@ -18,11 +17,7 @@ class VoiceRecognitionPage extends StatefulWidget {
 }
 
 class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
-  // キーワード設定ダイアログを表示する関数
-  void _showKeywordDialog(
-      BuildContext context, KeywordProvider keywordProvider) {
-    showKeywordSettingDialog(context);
-  }
+  CalendarEventProposal? _lastProposal;
 
   @override
   Widget build(BuildContext context) {
@@ -30,17 +25,55 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       create: (_) => VoiceRecognitionUIService(),
       child: Consumer<VoiceRecognitionUIService>(
         builder: (context, uiService, child) {
-          final double cardHeight = MediaQuery.of(context).size.height / 6;
           final recognitionProvider = Provider.of<RecognitionProvider>(context);
           final keywordProvider = Provider.of<KeywordProvider>(context);
           final classProvider = Provider.of<ClassProvider>(context);
 
+          // カレンダーイベント提案が新しく来たらボトムシートを表示
+          final currentProposal = uiService.pendingEventProposal;
+          if (currentProposal != null && currentProposal != _lastProposal) {
+            _lastProposal = currentProposal;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              VoiceRecognitionWidgets.showCalendarEventBottomSheet(
+                context: context,
+                proposal: currentProposal,
+                uiService: uiService,
+                onConfirm: (CalendarEventProposal updatedProposal) {
+                  print('カレンダーに登録: ${updatedProposal.summary}');
+                },
+              );
+            });
+          } else if (currentProposal == null) {
+            _lastProposal = null;
+          }
+
           return Scaffold(
+            backgroundColor:
+                uiService.isFlashing ? uiService.backgroundColor : Colors.white,
             appBar: AppBar(
-              title: Text('TaskEcho'),
+              backgroundColor: Colors.white,
+              elevation: 0,
+              title: const Text(
+                'TaskEcho',
+                style: TextStyle(
+                  color: Colors.black87,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
               actions: [
                 IconButton(
-                  icon: Icon(Icons.logout),
+                  icon: const Icon(Icons.history, color: Colors.black87),
+                  tooltip: 'キーワード履歴',
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => KeywordHistoryPage()),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon:
+                      const Icon(Icons.logout_outlined, color: Colors.black87),
                   onPressed: () async {
                     await FirebaseAuth.instance.signOut();
                     await GoogleAuth.signOut();
@@ -53,78 +86,77 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 ),
               ],
             ),
-            body: BasePage(
-              body: Stack(
-                children: [
-                  VoiceRecognitionWidgets.buildBackground(
-                    showGradient: uiService.showGradient,
-                    backgroundColor: uiService.backgroundColor,
-                    child: SingleChildScrollView(
-                      child: Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              SizedBox(height: 40),
-                              // 認識結果を表示するカード
-                              VoiceRecognitionWidgets.buildRecognitionCard(
-                                context: context,
-                                recognizedTexts: uiService.recognizedTexts,
-                                summarizedTexts: uiService.summarizedTexts,
-                                cardHeight: cardHeight,
-                              ),
-                              SizedBox(height: 20),
-                              // 録音開始/停止ボタン
-                              VoiceRecognitionWidgets.buildRecordingButton(
-                                context: context,
-                                isRecognizing:
-                                    recognitionProvider.isRecognizing,
-                                onPressed: () {
-                                  if (recognitionProvider.isRecognizing) {
-                                    uiService.stopRecording(context);
-                                  } else {
-                                    uiService.startRecording(context);
-                                  }
-                                },
-                              ),
-                              SizedBox(height: 20),
-                              // キーワード表示
-                              VoiceRecognitionWidgets.buildKeywordContainer(
-                                context: context,
-                                keyword: uiService.keyword,
-                                keywordProvider: keywordProvider,
-                                existKeyword:
-                                    uiService.existKeyword, // キーワード存在フラグを追加
-                                onKeywordSettingsPressed: () {
-                                  _showKeywordDialog(context, keywordProvider);
-                                },
-                              ),
-                              SizedBox(height: 20),
-                              // クラス選択ドロップダウン
-                              VoiceRecognitionWidgets.buildClassDropdown(
-                                context: context,
-                                classProvider: classProvider,
-                              ),
-                            ],
+            body: Stack(
+              children: [
+                // 背景レイヤー（グラデーションまたは点滅）
+                if (!uiService.isFlashing)
+                  Container(color: Colors.white)
+                else
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 500),
+                    color: uiService.backgroundColor,
+                  ),
+
+                // コンテンツレイヤー
+                SafeArea(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      children: [
+                        // 上部：授業選択
+                        VoiceRecognitionWidgets.buildClassDropdown(
+                          context: context,
+                          classProvider: classProvider,
+                        ),
+                        const SizedBox(height: 20),
+
+                        // キーワード表示
+                        VoiceRecognitionWidgets.buildKeywordContainer(
+                          context: context,
+                          keyword: uiService.keyword,
+                          keywordProvider: keywordProvider,
+                          existKeyword: uiService.existKeyword,
+                        ),
+                        const SizedBox(height: 40),
+
+                        // 中央：録音ボタン（大きく、目立つように）
+                        VoiceRecognitionWidgets.buildRecordingButton(
+                          context: context,
+                          isRecognizing: recognitionProvider.isRecognizing,
+                          onPressed: () {
+                            if (recognitionProvider.isRecognizing) {
+                              uiService.stopRecording(context);
+                            } else {
+                              uiService.startRecording(context);
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+
+                        // 録音状態テキスト
+                        Text(
+                          recognitionProvider.isRecognizing
+                              ? '録音中...'
+                              : 'タップして録音開始',
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 14,
                           ),
                         ),
-                      ),
+                        const SizedBox(height: 40),
+
+                        // 下部：認識結果カード
+                        VoiceRecognitionWidgets.buildRecognitionCard(
+                          context: context,
+                          recognizedTexts: uiService.recognizedTexts,
+                          // summarizedTexts: uiService.summarizedTexts,
+                          cardHeight: 120,
+                        ),
+                      ],
                     ),
                   ),
-                  // 設定ボタンをStackの中に配置
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    child: VoiceRecognitionWidgets.buildSettingsButton(
-                      context: context,
-                      onPressed: () {
-                        showSettingsDialog(context);
-                      },
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           );
         },

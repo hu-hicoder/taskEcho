@@ -5,16 +5,41 @@ import '../providers/classProvider.dart';
 import '../providers/textsDataProvider.dart';
 import '../providers/recognitionProvider.dart';
 import '../providers/keywordProvider.dart';
+import '../models/calendar_event_proposal.dart';
+import '../models/event_time.dart';
+import '../models/reminder.dart';
 import 'voiceRecognitionService.dart';
+import 'backend_service.dart';
 
 class VoiceRecognitionUIService extends ChangeNotifier {
   final VoiceRecognitionService _voiceService = VoiceRecognitionService();
 
   // UI状態管理用の変数
-  List<String> recognizedTexts = ["認識結果1", "認識結果2", "認識結果3"];
-  List<String> summarizedTexts = ["要約1", "要約2", "要約3"];
+  List<String> recognizedTexts = ["ここに認識結果が表示されます"];
+  // List<String> summarizedTexts = ["要約1", "要約2", "要約3"];
   String keyword = "キーワード検出待機中";
   List<String> detectedKeywords = [];
+
+  // カレンダーイベント提案の状態
+  CalendarEventProposal? _pendingEventProposal;
+
+  // イベントキュー（複数イベントの管理用）
+  List<CalendarEventProposal> _eventQueue = [];
+  // スキップされたイベントを一時保存するスタック（Undo用）
+  List<CalendarEventProposal> _skippedEvents = [];
+
+  /// 現在保留中のカレンダーイベント提案を取得
+  CalendarEventProposal? get pendingEventProposal => _pendingEventProposal;
+
+  /// 現在のキューに残っているイベント数を取得
+  int get eventQueueLength => _eventQueue.length;
+
+  /// まだ表示していないイベントがあるかどうか
+  bool get hasMoreEvents => _eventQueue.isNotEmpty;
+
+  /// 現在何個目のイベントを表示しているか（1から始まる）
+  int _totalEventsCount = 0;
+  int get currentEventNumber => _totalEventsCount - _eventQueue.length;
 
   // タイマー関連
   Timer? timer;
@@ -69,6 +94,15 @@ class VoiceRecognitionUIService extends ChangeNotifier {
           keyword = "検出: ${detectedKeywords.join(', ')}";
           startFlashing();
 
+          // 【本番】バックエンドに音声テキストを送信して要約とカレンダー情報を取得
+          final firstKeyword =
+              detectedKeywords.isNotEmpty ? detectedKeywords.first : null;
+          processVoiceTextWithBackend(
+            context,
+            text: newRecognizedText,
+            keyword: firstKeyword,
+          );
+
           // キーワードごとに1分後にDBに保存
           for (String detectedKeyword in detectedKeywords) {
             _voiceService.saveKeywordWithDelay(
@@ -93,18 +127,9 @@ class VoiceRecognitionUIService extends ChangeNotifier {
 
   // テキストリストの更新
   void _updateTextLists(String recognizedText, String summarizedText) {
-    if (recognizedTexts.length > 3) {
-      recognizedTexts.removeAt(0);
-      summarizedTexts.removeAt(0);
-    }
-    recognizedTexts.add(recognizedText);
-    summarizedTexts.add(summarizedText);
-
-    if (recognizedText.length > 100) {
-      recognizedTexts = ["", "", ""];
-      summarizedTexts = ["", "", ""];
-    }
-    currentIndex = recognizedTexts.length - 1;
+    // カードが1つだけなので、常に最新のテキストで上書き
+    recognizedTexts = [recognizedText];
+    currentIndex = 0;
   }
 
   // 点滅を開始する
@@ -148,6 +173,172 @@ class VoiceRecognitionUIService extends ChangeNotifier {
   void resetKeywordDisplay() {
     keyword = "キーワード検出待機中";
     existKeyword = false;
+  }
+
+  /// カレンダーイベント提案を設定する
+  ///
+  /// この関数が呼ばれると、UIはボトムシートを表示すべきと判断できます
+  void proposeCalendarEvent(CalendarEventProposal proposal) {
+    _pendingEventProposal = proposal;
+    notifyListeners(); // UIに変更を通知
+    print('📅 カレンダーイベント提案: ${proposal.summary} at ${proposal.start}');
+  }
+
+  /// カレンダーイベント提案をクリアする
+  ///
+  /// ユーザーが承諾または却下した後に呼び出されます
+  void clearEventProposal() {
+    _pendingEventProposal = null;
+    notifyListeners(); // UIに変更を通知
+  }
+
+  /// 複数のカレンダーイベントをキューに追加して順番に表示する
+  ///
+  /// バックエンドから複数イベントを取得した場合に使用
+  void proposeMultipleEvents(List<CalendarEventProposal> events) {
+    if (events.isEmpty) {
+      print('⚠️ イベントリストが空です');
+      return;
+    }
+
+    _eventQueue.clear(); // 既存のキューをクリア
+    _eventQueue.addAll(events);
+    _totalEventsCount = events.length;
+
+    print('📅 ${events.length}個のイベントをキューに追加しました');
+
+    // 最初のイベントを表示
+    _showNextEvent();
+  }
+
+  /// キューから次のイベントを取り出して表示する（内部用）
+  void _showNextEvent() {
+    if (_eventQueue.isNotEmpty) {
+      _pendingEventProposal = _eventQueue.removeAt(0);
+      notifyListeners();
+      print(
+          '📅 イベント表示 (${currentEventNumber}/${_totalEventsCount}): ${_pendingEventProposal?.summary}');
+    } else {
+      _pendingEventProposal = null;
+      _totalEventsCount = 0;
+      notifyListeners();
+      print('✅ すべてのイベントを処理しました');
+    }
+  }
+
+  /// 現在のイベントをスキップして次のイベントへ
+  ///
+  /// ユーザーが「スキップ」ボタンを押した時に呼ばれる
+  void skipCurrentEvent() {
+    print('⏭️ イベントをスキップ: ${_pendingEventProposal?.summary}');
+    if (_pendingEventProposal != null) {
+      _skippedEvents.add(_pendingEventProposal!);
+    }
+    _showNextEvent();
+  }
+
+  /// 現在のイベントを承認して次のイベントへ
+  ///
+  /// カレンダーに登録が成功した後に呼ばれる
+  void confirmAndNext() {
+    print('✅ イベントを承認: ${_pendingEventProposal?.summary}');
+    _showNextEvent();
+  }
+
+  /// イベントキューをすべてクリアする
+  void clearEventQueue() {
+    _eventQueue.clear();
+    _pendingEventProposal = null;
+    _totalEventsCount = 0;
+    _skippedEvents.clear();
+    notifyListeners();
+    print('🗑️ イベントキューをクリアしました');
+  }
+
+  /// 【本番用】音声認識テキストをバックエンドに送信し、要約とカレンダーイベントを取得する
+  ///
+  /// [context] BuildContext
+  /// [text] 音声認識で取得したテキスト
+  /// [keyword] キーワード（オプション）
+  ///
+  /// 戻り値: 処理が成功した場合はtrue、失敗した場合はfalse
+  Future<bool> processVoiceTextWithBackend(
+    BuildContext context, {
+    required String text,
+    String? keyword,
+  }) async {
+    try {
+      print('🎤 音声テキストをバックエンドで処理開始...');
+      print('  テキスト: $text');
+      print('  キーワード: ${keyword ?? "なし"}');
+
+      // バックエンドに送信
+      final result = await BackendService.processVoiceText(
+        text: text,
+        keyword: keyword,
+      );
+
+      if (result == null) {
+        print('❌ バックエンドからの応答がありませんでした');
+        return false;
+      }
+
+      // 要約テキストを表示用に保存
+      if (result.summarizedText.isNotEmpty) {
+        print('📝 要約: ${result.summarizedText}');
+        // 必要に応じて要約テキストをUIに表示
+        _updateTextLists(text, result.summarizedText);
+      }
+
+      // カレンダーイベントがある場合は表示
+      if (result.calendarEvents.isNotEmpty) {
+        print('📅 ${result.calendarEvents.length}個のカレンダーイベントを取得');
+
+        // CalendarEventからCalendarEventProposalに変換
+        final proposals = result.calendarEvents.map((event) {
+          // event.startとevent.endをEventTimeに変換
+          EventTime? startTime;
+          if (event.start != null) {
+            final startJson = (event.start as dynamic).toJson();
+            startTime = EventTime.fromJson(startJson);
+          }
+
+          EventTime? endTime;
+          if (event.end != null) {
+            final endJson = (event.end as dynamic).toJson();
+            endTime = EventTime.fromJson(endJson);
+          }
+
+          Reminders? reminders;
+          if (event.reminders != null) {
+            final remindersJson = (event.reminders as dynamic).toJson();
+            reminders = Reminders.fromJson(remindersJson);
+          }
+
+          return CalendarEventProposal(
+            summary: event.summary ?? 'イベント',
+            description: event.description,
+            start: startTime ??
+                EventTime(dateTime: DateTime.now().toIso8601String()),
+            end: endTime,
+            location: event.location,
+            attendees: event.attendees,
+            reminders: reminders,
+          );
+        }).toList();
+
+        // 複数イベントをキューに追加して順番に表示
+        proposeMultipleEvents(proposals);
+      } else {
+        print('ℹ️ カレンダーイベントはありませんでした');
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      print('❌ バックエンド処理エラー: $e');
+      return false;
+    }
   }
 
   // 音声認識の開始
@@ -196,6 +387,12 @@ class VoiceRecognitionUIService extends ChangeNotifier {
     timer?.cancel();
     stopFlashing();
     resetKeywordDisplay();
+
+    // recognizedTextsを初期化
+    recognizedTexts = ["ここに認識結果が表示されます"];
+    detectedKeywords = [];
+    currentIndex = 0;
+    notifyListeners();
 
     print("🛑 音声認識を停止しました");
   }
