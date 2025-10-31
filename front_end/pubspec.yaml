@@ -88,6 +88,10 @@ flutter:
     - assets/.env
     - assets/models/
     - assets/models/universal_sentence_encoder_multilingual.tflite
+    - assets/models/sentence_bert_ja.tflite
+    - assets/tokenizer/sentence_bert_ja/vocab.txt
+    - assets/tokenizer/sentence_bert_ja/special_tokens_map.json
+    - assets/tokenizer/sentence_bert_ja/tokenizer_config.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

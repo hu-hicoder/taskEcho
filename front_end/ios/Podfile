@@ -31,6 +31,11 @@ target 'Runner' do
   use_frameworks!
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  
+  # TensorFlow Lite with Select TF Ops support for iOS
+  # これにより SentencePiece などのカスタムオペレーションが使用可能になります
+  pod 'TensorFlowLiteSelectTfOps', '~> 2.16.1'
+  
   target 'RunnerTests' do
     inherit! :search_paths
   end
