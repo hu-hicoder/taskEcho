@@ -182,8 +182,42 @@ class DatabaseHelper {
       }
 
       await db.transaction((txn) async {
-        // 既存のキーワードを全て削除
-        await txn.delete('keywords');
+        // 既存のキーワードを取得
+        final List<Map<String, dynamic>> existingKeywords =
+            await txn.query('keywords');
+        final Set<String> existingKeywordSet =
+            existingKeywords.map((k) => k['keyword'] as String).toSet();
+
+        // 新しいキーワードのセット
+        final Set<String> newKeywordSet = keywords.toSet();
+
+        // 削除するキーワード（履歴がないもののみ削除）
+        final keywordsToDelete = existingKeywordSet.difference(newKeywordSet);
+        for (String keyword in keywordsToDelete) {
+          // 履歴があるかチェック
+          final keywordData = await txn.query(
+            'keywords',
+            where: 'keyword = ?',
+            whereArgs: [keyword],
+          );
+          if (keywordData.isNotEmpty) {
+            final keywordId = keywordData.first['id'] as int;
+            final detections = await txn.query(
+              'keyword_detections',
+              where: 'keyword_id = ?',
+              whereArgs: [keywordId],
+            );
+            
+            // 履歴がない場合のみ削除
+            if (detections.isEmpty) {
+              await txn.delete(
+                'keywords',
+                where: 'keyword = ?',
+                whereArgs: [keyword],
+              );
+            }
+          }
+        }
 
         // 新しいキーワードを挿入
         for (String keyword in keywords) {
