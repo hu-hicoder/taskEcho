@@ -296,14 +296,14 @@ class VoiceRecognitionService {
     _detectedKeywordsInCurrentPhrase.clear();
   }
 
-  // 音声認識データの処理
-  ProcessedData processRecognitionData(
+  // 音声認識データの処理（セマンティック検索対応）
+  Future<ProcessedData> processRecognitionData(
     String newRecognizedText,
     String selectedClass,
     TextsDataProvider textsDataProvider,
     KeywordProvider keywordProvider,
     RecognitionProvider recognitionProvider,
-  ) {
+  ) async {
     String newSummarizedText = "";
 
     // フレーズ変更時に前のフレーズの最終版を更新（キーワード検出より先に実行）
@@ -314,10 +314,26 @@ class VoiceRecognitionService {
         ? recognitionProvider.combinedText
         : newRecognizedText;
 
-    // キーワード検出（結合テキストを使用）
-    List<String> keywords = keywordProvider.keywords;
-    List<String> detectedKeywords =
-        keywords.where((k) => textForKeywordDetection.contains(k)).toList();
+    // セマンティック検索を使用したキーワード検出
+    List<String> detectedKeywords = [];
+    try {
+      final detections = await keywordProvider.detectKeywordsSemantic(textForKeywordDetection);
+      // 検出されたキーワードを抽出（重複を除く）
+      detectedKeywords = detections.map((d) => d.keyword).toSet().toList();
+      
+      // デバッグ情報を出力
+      if (detections.isNotEmpty) {
+        print('🔍 セマンティック検出結果:');
+        for (final detection in detections.take(3)) {
+          print('  - "${detection.matchedText}" ← "${detection.keyword}" (類似度: ${(detection.similarity * 100).toStringAsFixed(1)}%)');
+        }
+      }
+    } catch (e) {
+      print('⚠️ セマンティック検索エラー、完全一致にフォールバック: $e');
+      // エラーの場合は従来の完全一致検出にフォールバック
+      List<String> keywords = keywordProvider.keywords;
+      detectedKeywords = keywords.where((k) => textForKeywordDetection.contains(k)).toList();
+    }
 
     // 新規検出のキーワードのみを抽出（既に検出済みのものは除外）
     List<String> newKeywords = detectedKeywords

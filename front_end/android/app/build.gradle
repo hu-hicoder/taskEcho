@@ -3,23 +3,23 @@ plugins {
     // START: FlutterFire Configuration
     id 'com.google.gms.google-services'
     // END: FlutterFire Configuration
-    id "kotlin-android"
+    id "org.jetbrains.kotlin.android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
 
 android {
     namespace 'com.example.front_end' // ここに namespace を追加
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 36
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "17"
     }
 
     defaultConfig {
@@ -35,6 +35,12 @@ android {
         versionName = flutter.versionName
     }
 
+    // TFLite モデルファイルの圧縮を無効化
+    // これにより SELECT_TF_OPS を含むモデルが正しく読み込まれます
+    aaptOptions {
+        noCompress "tflite"
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
@@ -46,4 +52,11 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // TensorFlow Lite with Select TF Ops support
+    // これにより SentencePiece などのカスタムオペレーションが使用可能になります
+    implementation 'org.tensorflow:tensorflow-lite:2.16.1'
+    implementation 'org.tensorflow:tensorflow-lite-select-tf-ops:2.16.1'
 }
