@@ -21,6 +21,9 @@ class KeywordProvider with ChangeNotifier {
   
   // セマンティック検索の類似度閾値（0.0〜1.0）
   double _similarityThreshold = 0.7;
+  
+  // 音声認識中はセマンティック検索を一時停止するフラグ
+  bool _pauseSemanticSearchDuringRecognition = true;
 
   List<String> get keywords => _keywords;
   bool get isSemanticSearchInitialized => _semanticSearchService?.isInitialized ?? false;
@@ -145,8 +148,13 @@ class KeywordProvider with ChangeNotifier {
     }
   }
 
-  /// セマンティック検索を使用したキーワード検出（改善版）
+  /// セマンティック検索を使用したキーワード検出（改善版・デバウンス付き）
   Future<List<KeywordDetection>> detectKeywordsSemantic(String transcript) async {
+    // 短いテキストの場合はスキップ（パフォーマンス改善）
+    if (transcript.length < 3) {
+      return [];
+    }
+    
     if (_semanticSearchService == null || !_semanticSearchService!.isInitialized) {
       // フォールバック: 完全一致検出
       final exactMatches = _keywords.where((k) => transcript.contains(k)).toList();
@@ -165,13 +173,13 @@ class KeywordProvider with ChangeNotifier {
     List<KeywordDetection> detections;
     switch (_detectionMode) {
       case 'exact':
-        // 完全一致のみ
+        // 完全一致のみ（高速）
         detections = await _keywordDetectorService.detectKeywordsHybrid(transcript, _keywords)
             .then((d) => d.where((detection) => detection.similarity == 1.0).toList());
         break;
       
       case 'semantic':
-        // セマンティック検索のみ
+        // セマンティック検索のみ（重い処理）
         detections = await _keywordDetectorService.detectKeywords(transcript, _keywords);
         break;
       

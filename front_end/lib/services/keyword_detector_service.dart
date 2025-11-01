@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:flutter_speech_to_text/services/i_semantic_search_service.dart';
 
 /// キーワード検出結果
@@ -39,6 +40,9 @@ class KeywordDetectorService {
   
   // スライディングウィンドウのステップサイズ
   int _stepSize = 25;
+  
+  // キーワードベクトルのキャッシュ（パフォーマンス改善）
+  final Map<String, Float32List> _keywordVectorCache = {};
 
   KeywordDetectorService(this._semanticSearchService);
 
@@ -48,6 +52,11 @@ class KeywordDetectorService {
       throw ArgumentError('閾値は0.0〜1.0の範囲で指定してください');
     }
     _similarityThreshold = threshold;
+  }
+  
+  /// キャッシュをクリア
+  void clearCache() {
+    _keywordVectorCache.clear();
   }
 
   /// ウィンドウサイズを設定（文字数）
@@ -97,23 +106,41 @@ class KeywordDetectorService {
     return detections;
   }
 
-  /// 単一のキーワードを検出（スライディングウィンドウ方式）
+  /// 単一のキーワードを検出（スライディングウィンドウ方式・最適化版）
   Future<List<KeywordDetection>> _detectSingleKeyword(
     String text,
     String keyword,
   ) async {
     final detections = <KeywordDetection>[];
 
-    // キーワードのベクトル化（一度だけ実行）
-    final keywordVector = await _semanticSearchService.encodeText(keyword);
+    // キーワードのベクトル化（キャッシュ利用）
+    Float32List? keywordVector;
+    if (_keywordVectorCache.containsKey(keyword)) {
+      keywordVector = _keywordVectorCache[keyword];
+    } else {
+      keywordVector = await _semanticSearchService.encodeText(keyword);
+      if (keywordVector != null) {
+        _keywordVectorCache[keyword] = keywordVector;
+      }
+    }
+
     if (keywordVector == null) {
       return [];
     }
 
     // スライディングウィンドウでテキストを分割
     final windows = _createSlidingWindows(text);
+    
+    // ウィンドウ数が多い場合はサンプリング（パフォーマンス改善）
+    final maxWindows = 10; // 最大処理ウィンドウ数
+    final windowsToProcess = windows.length > maxWindows
+        ? _sampleWindows(windows, maxWindows)
+        : windows;
 
-    for (final window in windows) {
+    for (final window in windowsToProcess) {
+      // 短い遅延を入れてUIの応答性を保つ
+      await Future.delayed(Duration.zero);
+      
       final windowVector = await _semanticSearchService.encodeText(window.text);
       if (windowVector == null) continue;
 
@@ -138,6 +165,21 @@ class KeywordDetectorService {
     }
 
     return detections;
+  }
+  
+  /// ウィンドウをサンプリング（均等に分散させる）
+  List<_TextWindow> _sampleWindows(List<_TextWindow> windows, int maxCount) {
+    if (windows.length <= maxCount) return windows;
+    
+    final step = windows.length / maxCount;
+    final sampled = <_TextWindow>[];
+    
+    for (int i = 0; i < maxCount; i++) {
+      final index = (i * step).floor();
+      sampled.add(windows[index]);
+    }
+    
+    return sampled;
   }
 
   /// テキストをスライディングウィンドウで分割
