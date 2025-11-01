@@ -72,8 +72,8 @@ class VoiceRecognitionUIService extends ChangeNotifier {
       String newRecognizedText = recognitionProvider.lastWords;
 
       if (newRecognizedText.isNotEmpty) {
-        // データ処理サービスを使用
-        final processedData = _voiceService.processRecognitionData(
+        // データ処理サービスを使用（非同期処理に対応）
+        final processedData = await _voiceService.processRecognitionData(
           newRecognizedText,
           selectedClass,
           textsDataProvider,
