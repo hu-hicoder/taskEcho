@@ -168,7 +168,7 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
 
           // カレンダーイベント提案が新しく来たらボトムシートを表示
           final currentProposal = uiService.pendingEventProposal;
-          if (currentProposal != null && currentProposal != _lastProposal) {
+          if (false && currentProposal != null && currentProposal != _lastProposal) {
             _lastProposal = currentProposal;
             WidgetsBinding.instance.addPostFrameCallback((_) {
               VoiceRecognitionWidgets.showCalendarEventBottomSheet(
