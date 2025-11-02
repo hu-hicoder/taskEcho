@@ -8,13 +8,13 @@ import '../services/googleCalendarService.dart';
 /// 編集可能なカレンダーイベント確認用ボトムシート
 class EditableCalendarEventSheet extends StatefulWidget {
   final CalendarEventProposal proposal;
-  final VoiceRecognitionUIService uiService;
+  final VoiceRecognitionUIService? uiService;
   final ValueChanged<CalendarEventProposal> onConfirm;
 
   const EditableCalendarEventSheet({
     Key? key,
     required this.proposal,
-    required this.uiService,
+    this.uiService,
     required this.onConfirm,
   }) : super(key: key);
 
@@ -469,7 +469,7 @@ class _EditableCalendarEventSheetState
   // ヘッダーウィジェット
   Widget _buildHeader() {
     final totalEvents =
-        widget.uiService.currentEventNumber + widget.uiService.eventQueueLength;
+        (widget.uiService?.currentEventNumber ?? 0) + (widget.uiService?.eventQueueLength ?? 0);
     final hasMultipleEvents = totalEvents > 1;
 
     return Column(
@@ -487,7 +487,7 @@ class _EditableCalendarEventSheetState
                 onPressed: () {
                   // ボトムシートを閉じてスキップ処理を行い、Undoを表示する
                   Navigator.pop(context);
-                  widget.uiService.skipCurrentEvent();
+                  widget.uiService?.skipCurrentEvent();
                 },
               ),
 
@@ -500,7 +500,7 @@ class _EditableCalendarEventSheetState
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '$totalEvents個中${widget.uiService.currentEventNumber}個目',
+                    '$totalEvents個中${widget.uiService?.currentEventNumber ?? 1}個目',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -661,7 +661,7 @@ class _EditableCalendarEventSheetState
       Navigator.pop(context);
       widget.onConfirm(updatedProposal);
       // 次のイベントを表示（キューが空なら何もしない）
-      widget.uiService.confirmAndNext();
+      widget.uiService?.confirmAndNext();
     }
   }
 }

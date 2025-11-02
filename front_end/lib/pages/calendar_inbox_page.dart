@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/calendar_inbox_provider.dart';
 import '../services/googleCalendarService.dart';
 import '../models/calendar_event_proposal.dart';
+import '../widgets/editable_calendar_event_sheet.dart';
 
 class CalendarInboxPage extends StatelessWidget {
   const CalendarInboxPage({super.key});
@@ -50,6 +51,26 @@ class CalendarInboxPage extends StatelessWidget {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    TextButton(
+                      onPressed: () async {
+                        await showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (ctx) {
+                            return EditableCalendarEventSheet(
+                              proposal: p,
+                              uiService: null,
+                              onConfirm: (updated) {
+                                // 追加成功後はインボックスから削除
+                                context.read<CalendarInboxProvider>().removeById(item.id);
+                              },
+                            );
+                          },
+                        );
+                      },
+                      child: const Text('編集'),
+                    ),
                     TextButton(
                       onPressed: () async {
                         try {
