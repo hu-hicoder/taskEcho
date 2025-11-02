@@ -632,6 +632,13 @@ class _EditableCalendarEventSheetState
     );
 
     // カレンダーに追加
+    // 設定のみ保存（カレンダー追加は呼び出し側で実施）
+    widget.onConfirm(updatedProposal);
+    if (mounted) {
+      Navigator.pop(context);
+    }
+    return;
+
     try {
       final calendarService = GoogleCalendarService();
       await calendarService.createEventFromProposal(updatedProposal);
