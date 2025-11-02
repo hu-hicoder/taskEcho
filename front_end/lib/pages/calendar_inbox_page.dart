@@ -62,8 +62,13 @@ class CalendarInboxPage extends StatelessWidget {
                               proposal: p,
                               uiService: null,
                               onConfirm: (updated) {
-                                // 追加成功後はインボックスから削除
-                                context.read<CalendarInboxProvider>().removeById(item.id);
+                                // 設定のみ保存して閉じる
+                                context.read<CalendarInboxProvider>().updateProposal(item.id, updated);
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('設定を保存しました: ${updated.summary}')),
+                                  );
+                                }
                               },
                             );
                           },

@@ -487,7 +487,7 @@ class _EditableCalendarEventSheetState
                 onPressed: () {
                   // ボトムシートを閉じてスキップ処理を行い、Undoを表示する
                   Navigator.pop(context);
-                  widget.uiService?.skipCurrentEvent();
+                  
                 },
               ),
 
