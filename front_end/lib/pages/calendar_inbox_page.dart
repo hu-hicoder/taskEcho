@@ -20,6 +20,7 @@ class CalendarInboxPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('インボックス', style: TextStyle(color: Colors.black87)),
         backgroundColor: Colors.white,
