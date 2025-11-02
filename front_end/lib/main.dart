@@ -11,6 +11,7 @@ import 'providers/classProvider.dart';
 import 'providers/keywordProvider.dart';
 import 'providers/textsDataProvider.dart';
 import 'providers/recognitionProvider.dart';
+import 'providers/calendar_inbox_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
@@ -90,6 +91,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TextsDataProvider()),
         ChangeNotifierProvider(create: (_) => RecognitionProvider()),
         ChangeNotifierProvider(create: (_) => KeywordProvider()),
+        ChangeNotifierProvider(create: (_) => CalendarInboxProvider()),
       ],
       child: SpeechToTextApp(),
     ),
