@@ -3,7 +3,6 @@ import '../models/calendar_event_proposal.dart';
 import '../models/event_time.dart';
 import '../models/reminder.dart';
 import '../services/voiceRecognitionUIService.dart';
-import '../services/googleCalendarService.dart';
 
 /// 編集可能なカレンダーイベント確認用ボトムシート
 class EditableCalendarEventSheet extends StatefulWidget {
@@ -640,8 +639,7 @@ class _EditableCalendarEventSheetState
     return;
 
     try {
-      final calendarService = GoogleCalendarService();
-      await calendarService.createEventFromProposal(updatedProposal);
+      // 保存のみとするため、カレンダー追加処理は呼び出し側へ委譲
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
