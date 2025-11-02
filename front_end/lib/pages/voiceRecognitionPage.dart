@@ -7,6 +7,8 @@ import '../providers/keywordProvider.dart';
 import '../services/voiceRecognitionUIService.dart';
 import '../widgets/voiceRecognitionWidgets.dart';
 import '../models/calendar_event_proposal.dart';
+import '../providers/calendar_inbox_provider.dart';
+import 'calendar_inbox_page.dart';
 import '/auth/googleSignIn.dart';
 import 'signIn.dart';
 import 'keywordHistoryPage.dart';
@@ -198,6 +200,45 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
                 ),
               ),
               actions: [
+                // インボックスアイコン（未処理件数バッジ付き）
+                Consumer<CalendarInboxProvider>(
+                  builder: (context, inbox, _) {
+                    final count = inbox.pendingCount;
+                    return IconButton(
+                      icon: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.inbox_outlined, color: Colors.black87),
+                          if (count > 0)
+                            Positioned(
+                              right: -2,
+                              top: -2,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                decoration: BoxDecoration(
+                                  color: Colors.redAccent,
+                                  borderRadius: BorderRadius.circular(9),
+                                ),
+                                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                                child: Text(
+                                  count > 99 ? '99+' : '$count',
+                                  style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      tooltip: 'インボックス',
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const CalendarInboxPage()),
+                        );
+                      },
+                    );
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.history, color: Colors.black87),
                   tooltip: 'キーワード履歴',

@@ -10,6 +10,8 @@ import '../models/event_time.dart';
 import '../models/reminder.dart';
 import 'voiceRecognitionService.dart';
 import 'backend_service.dart';
+import '../providers/calendar_inbox_provider.dart';
+import '../pages/calendar_inbox_page.dart';
 
 class VoiceRecognitionUIService extends ChangeNotifier {
   final VoiceRecognitionService _voiceService = VoiceRecognitionService();
@@ -328,7 +330,26 @@ class VoiceRecognitionUIService extends ChangeNotifier {
         }).toList();
 
         // 複数イベントをキューに追加して順番に表示
-        proposeMultipleEvents(proposals);
+        try {
+          final inbox = Provider.of<CalendarInboxProvider>(context, listen: false);
+          inbox.addAll(proposals);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${proposals.length} 件をインボックスに追加しました'),
+              action: SnackBarAction(
+                label: '開く',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const CalendarInboxPage()),
+                  );
+                },
+              ),
+            ),
+          );
+        } catch (e) {
+          print('インボックス追加エラー: $e');
+        }
       } else {
         print('ℹ️ カレンダーイベントはありませんでした');
       }
