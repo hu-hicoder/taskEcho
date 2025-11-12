@@ -45,7 +45,7 @@ class SignInPage extends StatelessWidget {
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.black54,
+                    backgroundColor: Color.fromRGBO(33, 150, 243, 0.75),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
                       vertical: 14,
@@ -74,7 +74,7 @@ class SignInPage extends StatelessWidget {
                   ),
                   style: ElevatedButton.styleFrom(
                     // backgroundColor: Color.fromRGBO(65, 30, 124, 0.75),
-                    backgroundColor: Color.fromRGBO(33, 150, 243, 0.75),
+                    backgroundColor: Colors.black54,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
                       vertical: 14,
