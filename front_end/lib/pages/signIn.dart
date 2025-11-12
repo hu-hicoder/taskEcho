@@ -8,30 +8,36 @@ class SignInPage extends StatelessWidget {
     return Scaffold(
       body: Container(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.indigoAccent,
-              Colors.deepPurpleAccent,
-            ],
-          ),
+          // gradient: LinearGradient(
+          //   begin: Alignment.topCenter,
+          //   end: Alignment.bottomCenter,
+          //   colors: [
+          //     Colors.indigoAccent,
+          //     Colors.deepPurpleAccent,
+          //   ],
+          // ),
+          color: Colors.white,
         ),
         child: SafeArea(
           child: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  'taskEcho',
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                    letterSpacing: 2,
-                  ),
+                // Text(
+                //   'taskEcho',
+                //   style: TextStyle(
+                //     fontSize: 40,
+                //     fontWeight: FontWeight.bold,
+                //     color: Colors.white,
+                //     letterSpacing: 2,
+                //   ),
+                // ),
+                Image.asset(
+                  'assets/images/TaskEcho_lightmode.png',
+                  width: 280,
+                  fit: BoxFit.contain,
                 ),
-                const SizedBox(height: 50),
+                const SizedBox(height: 65),
                 ElevatedButton.icon(
                   icon: Icon(Icons.login, size: 24, color: Colors.white),
                   label: Text(
@@ -67,7 +73,8 @@ class SignInPage extends StatelessWidget {
                     style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color.fromRGBO(65, 30, 124, 0.75),
+                    // backgroundColor: Color.fromRGBO(65, 30, 124, 0.75),
+                    backgroundColor: Color.fromRGBO(33, 150, 243, 0.75),
                     padding: const EdgeInsets.symmetric(
                       horizontal: 32,
                       vertical: 14,

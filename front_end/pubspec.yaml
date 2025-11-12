@@ -87,6 +87,7 @@ flutter:
   #   - images/a_dot_ham.jpeg
     - assets/.env
     - assets/models/
+    - assets/images/
     # - assets/models/universal_sentence_encoder_multilingual.tflite
     - assets/models/sentence_bert_ja.tflite
     - assets/tokenizer/sentence_bert_ja/vocab.txt
