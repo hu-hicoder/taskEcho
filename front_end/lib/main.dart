@@ -17,6 +17,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import 'dart:async';
 import 'firebase_options.dart';
+import 'services/notification_service.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -74,6 +75,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // ローカル通知初期化(Android)
+  await NotificationService.init();
 
   // SQLiteの初期化
   try {

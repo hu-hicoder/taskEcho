@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../providers/classProvider.dart';
 import '../providers/recognitionProvider.dart';
 import '../providers/keywordProvider.dart';
+import '../services/notification_service.dart';
 import '../services/voiceRecognitionUIService.dart';
 import '../widgets/voiceRecognitionWidgets.dart';
 import '../models/calendar_event_proposal.dart';
@@ -19,6 +20,7 @@ class VoiceRecognitionPage extends StatefulWidget {
 }
 
 class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
+  bool _lastKeywordDetected = false;
   CalendarEventProposal? _lastProposal;
 
   // セマンティック検索のクイック設定ウィジェット
@@ -164,6 +166,14 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
       create: (_) => VoiceRecognitionUIService(),
       child: Consumer<VoiceRecognitionUIService>(
         builder: (context, uiService, child) {
+          final nowDetected = uiService.existKeyword == true;
+          if (nowDetected && !_lastKeywordDetected) {
+            _lastKeywordDetected = true;
+            NotificationService.showLocal('キーワード検出', '録音中にキーワードが見つかりました');
+          } else if (!nowDetected) {
+            _lastKeywordDetected = false;
+          }
+
           final recognitionProvider = Provider.of<RecognitionProvider>(context);
           final keywordProvider = Provider.of<KeywordProvider>(context);
           final classProvider = Provider.of<ClassProvider>(context);
