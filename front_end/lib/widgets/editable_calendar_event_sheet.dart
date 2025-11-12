@@ -3,18 +3,17 @@ import '../models/calendar_event_proposal.dart';
 import '../models/event_time.dart';
 import '../models/reminder.dart';
 import '../services/voiceRecognitionUIService.dart';
-import '../services/googleCalendarService.dart';
 
 /// 編集可能なカレンダーイベント確認用ボトムシート
 class EditableCalendarEventSheet extends StatefulWidget {
   final CalendarEventProposal proposal;
-  final VoiceRecognitionUIService uiService;
+  final VoiceRecognitionUIService? uiService;
   final ValueChanged<CalendarEventProposal> onConfirm;
 
   const EditableCalendarEventSheet({
     Key? key,
     required this.proposal,
-    required this.uiService,
+    this.uiService,
     required this.onConfirm,
   }) : super(key: key);
 
@@ -469,7 +468,7 @@ class _EditableCalendarEventSheetState
   // ヘッダーウィジェット
   Widget _buildHeader() {
     final totalEvents =
-        widget.uiService.currentEventNumber + widget.uiService.eventQueueLength;
+        (widget.uiService?.currentEventNumber ?? 0) + (widget.uiService?.eventQueueLength ?? 0);
     final hasMultipleEvents = totalEvents > 1;
 
     return Column(
@@ -487,7 +486,7 @@ class _EditableCalendarEventSheetState
                 onPressed: () {
                   // ボトムシートを閉じてスキップ処理を行い、Undoを表示する
                   Navigator.pop(context);
-                  widget.uiService.skipCurrentEvent();
+                  
                 },
               ),
 
@@ -500,7 +499,7 @@ class _EditableCalendarEventSheetState
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    '$totalEvents個中${widget.uiService.currentEventNumber}個目',
+                    '$totalEvents個中${widget.uiService?.currentEventNumber ?? 1}個目',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -632,9 +631,15 @@ class _EditableCalendarEventSheetState
     );
 
     // カレンダーに追加
+    // 設定のみ保存（カレンダー追加は呼び出し側で実施）
+    widget.onConfirm(updatedProposal);
+    if (mounted) {
+      Navigator.pop(context);
+    }
+    return;
+
     try {
-      final calendarService = GoogleCalendarService();
-      await calendarService.createEventFromProposal(updatedProposal);
+      // 保存のみとするため、カレンダー追加処理は呼び出し側へ委譲
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -661,7 +666,7 @@ class _EditableCalendarEventSheetState
       Navigator.pop(context);
       widget.onConfirm(updatedProposal);
       // 次のイベントを表示（キューが空なら何もしない）
-      widget.uiService.confirmAndNext();
+      widget.uiService?.confirmAndNext();
     }
   }
 }

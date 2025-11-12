@@ -1,6 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'auth/googleSignIn.dart';
+// import 'auth/googleSignIn.dart'; // 未使用のため削除
 import 'pages/signIn.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speech_to_text/pages/voiceRecognitionPage.dart';
@@ -11,6 +11,7 @@ import 'providers/classProvider.dart';
 import 'providers/keywordProvider.dart';
 import 'providers/textsDataProvider.dart';
 import 'providers/recognitionProvider.dart';
+import 'providers/calendar_inbox_provider.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
@@ -90,6 +91,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => TextsDataProvider()),
         ChangeNotifierProvider(create: (_) => RecognitionProvider()),
         ChangeNotifierProvider(create: (_) => KeywordProvider()),
+        ChangeNotifierProvider(create: (_) => CalendarInboxProvider()),
       ],
       child: SpeechToTextApp(),
     ),
