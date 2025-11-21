@@ -202,11 +202,26 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
             appBar: AppBar(
               backgroundColor: Colors.white,
               elevation: 0,
-              title: const Text(
-                'TaskEcho',
-                style: TextStyle(
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w600,
+              // title: const Text(
+              //   'TaskEcho',
+              //   style: TextStyle(
+              //     color: Colors.black87,
+              //     fontWeight: FontWeight.w600,
+              //   ),
+              // ),
+              centerTitle: false, // 左寄せ（アクションボタンとのバランスのため）
+              titleSpacing: 20,   // 左側の余白を調整
+              title: Padding(
+                padding: const EdgeInsets.only(top: 1.0), // ★ここを調整: 8px下に下げる
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    maxHeight: 28, // 高さを少し確保
+                  ),
+                  child: Image.asset(
+                    'assets/images/TaskEcho_lightmode.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.centerLeft, // 画像自体を左寄せ
+                  ),
                 ),
               ),
               actions: [
