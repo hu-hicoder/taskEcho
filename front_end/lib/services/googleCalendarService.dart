@@ -18,7 +18,7 @@ class GoogleHttpClient extends http.BaseClient {
 class GoogleCalendarService {
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     serverClientId:
-        dotenv.env['GOOGLE_CLIENT_ID'], // AndroidではserverClientIdを使用
+      kIsWeb ? null : dotenv.env['GOOGLE_CLIENT_ID'], 
     scopes: [cal.CalendarApi.calendarScope],
   );
 
