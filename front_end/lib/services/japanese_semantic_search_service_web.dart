@@ -45,12 +45,12 @@ class JapaneseSemanticSearchService implements ISemanticSearchService {
 
       // 2. Geminiモデルの初期化 (Embedding専用モデル)
       _embeddingModel = GenerativeModel(
-        model: 'text-embedding-004',
+        model: 'gemini-embedding-001',
         apiKey: apiKey,
       );
 
       _isInitialized = true;
-      print('✅ Web: Gemini API Direct Mode (Model: text-embedding-004)');
+      print('✅ Web: Gemini API Direct Mode (Model: gemini-embedding-001)');
       
     } catch (e) {
       print('❌ Gemini API Initialization Error: $e');
@@ -64,7 +64,7 @@ class JapaneseSemanticSearchService implements ISemanticSearchService {
 
   @override
   void printModelInfo() {
-    print('Model: Gemini text-embedding-004 (Direct)');
+    print('Model: Gemini gemini-embedding-001 (Direct)');
   }
 
   @override
