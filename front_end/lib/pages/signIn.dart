@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../auth/googleSignIn.dart';
 import '../main.dart'; // AuthWrapper を使います
@@ -38,37 +39,43 @@ class SignInPage extends StatelessWidget {
                   fit: BoxFit.contain,
                 ),
                 const SizedBox(height: 65),
-                SizedBox(
-                  width: 240,
-                  child: ElevatedButton.icon(
-                    icon: Icon(Icons.login, size: 24, color: Colors.white),
-                    label: Text(
-                      'Sign in with Google',
-                      style: TextStyle(fontSize: 16, color: Colors.white),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color.fromRGBO(33, 150, 243, 0.75),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 14,
+
+                // Googleサインインボタン（Web版では表示しない）
+                if (!kIsWeb) ...[
+                  SizedBox(
+                    width: 240,
+                    child: ElevatedButton.icon(
+                      icon: Icon(Icons.login, size: 24, color: Colors.white),
+                      label: Text(
+                        'Sign in with Google',
+                        style: TextStyle(fontSize: 16, color: Colors.white),
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color.fromRGBO(33, 150, 243, 0.75),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 14,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 6,
                       ),
-                      elevation: 6,
+                      onPressed: () async {
+                        final user = await GoogleAuth.signInWithGoogle();
+                        if (user != null) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => AuthWrapper()),
+                          );
+                        }
+                      },
                     ),
-                    onPressed: () async {
-                      final user = await GoogleAuth.signInWithGoogle();
-                      if (user != null) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => AuthWrapper()),
-                        );
-                      }
-                    },
                   ),
-                ),
-                const SizedBox(height: 16),  // ← ここで間隔を空ける
+                  const SizedBox(height: 16),
+                ],
+
+                // ゲストログインボタン
                 SizedBox(
                   width: 240,
                   child: ElevatedButton.icon(
