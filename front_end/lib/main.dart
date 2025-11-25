@@ -72,9 +72,19 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
   //await dotenv.load(fileName: ".env");
   await dotenv.load(fileName: "assets/.env");
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+    try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    print('Firebase initialized successfully');
+  } catch (e) {
+    if (e.toString().contains('duplicate-app')) {
+      print('Firebase already initialized, skipping...');
+    } else {
+      print('Firebase initialization error: $e');
+      rethrow;
+    }
+  }
 
   // ローカル通知初期化(Android)
   await NotificationService.init();
