@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -211,18 +212,42 @@ class _VoiceRecognitionPageState extends State<VoiceRecognitionPage> {
               // ),
               centerTitle: false, // 左寄せ（アクションボタンとのバランスのため）
               titleSpacing: 20,   // 左側の余白を調整
-              title: Padding(
-                padding: const EdgeInsets.only(top: 1.0), // ★ここを調整: 8px下に下げる
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(
-                    maxHeight: 28, // 高さを少し確保
+              title: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(top: 1.0),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 24,
+                      ),
+                      child: Image.asset(
+                        'assets/images/TaskEcho_lightmode.png',
+                        fit: BoxFit.contain,
+                        alignment: Alignment.centerLeft, // 画像自体を左寄せ
+                      ),
+                    ),
                   ),
-                  child: Image.asset(
-                    'assets/images/TaskEcho_lightmode.png',
-                    fit: BoxFit.contain,
-                    alignment: Alignment.centerLeft, // 画像自体を左寄せ
-                  ),
-                ),
+                  if (kIsWeb) ...[
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.orangeAccent.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.orangeAccent),
+                      ),
+                      child: const Text(
+                        'Demo',
+                        style: TextStyle(
+                          color: Colors.orange,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
               actions: [
                 // インボックスアイコン（未処理件数バッジ付き）

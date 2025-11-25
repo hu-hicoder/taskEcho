@@ -29,8 +29,8 @@ class SpeechToTextApp extends StatelessWidget {
         primarySwatch: Colors.cyan,
         scaffoldBackgroundColor: Color(0xFF0F0F1F), // ダークテーマ背景色
       ),
-      // home: VoiceRecognitionPage(),
-      home: AuthWrapper(), // 認証状態に応じて画面を切り替える
+      // home: kIsWeb ? const LandingPage() : AuthWrapper(),
+      home: AuthWrapper(),
     );
   }
 }
