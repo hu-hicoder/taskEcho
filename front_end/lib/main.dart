@@ -71,8 +71,43 @@ void _initSqlite() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
   //await dotenv.load(fileName: ".env");
-  await dotenv.load(fileName: "assets/.env");
+  // Web版とモバイル版で .env ファイルの読み込み方を分ける
+  if (kIsWeb) {
     try {
+      // Web版: .envファイルのパスを明示的に指定
+      await dotenv.load(fileName: ".env");
+      print('✅ .env file loaded successfully (Web)');
+      
+      // APIキーが正しく読み込まれたか確認
+      final geminiKey = dotenv.env['GEMINI_API_KEY'];
+      final googleClientId = dotenv.env['GOOGLE_CLIENT_ID'];
+      
+      if (geminiKey == null || geminiKey.isEmpty) {
+        print('❌ Error: GEMINI_API_KEY is missing.');
+      } else {
+        print('✅ GEMINI_API_KEY loaded: ${geminiKey.substring(0, 10)}...');
+      }
+      
+      if (googleClientId == null || googleClientId.isEmpty) {
+        print('⚠️ Warning: GOOGLE_CLIENT_ID is missing.');
+      } else {
+        print('✅ GOOGLE_CLIENT_ID loaded: ${googleClientId.substring(0, 20)}...');
+      }
+    } catch (e) {
+      print('❌ Error loading .env file (Web): $e');
+      // エラーが発生しても続行（APIキーが必要な機能は動作しない）
+    }
+  } else {
+    // Android/iOS版: assetsフォルダから読み込む
+    try {
+      await dotenv.load(fileName: "assets/.env");
+      print('✅ .env file loaded successfully (Mobile)');
+    } catch (e) {
+      print('❌ Error loading .env file (Mobile): $e');
+    }
+  }
+
+  try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
