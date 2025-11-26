@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'dart:math' as math;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_speech_to_text/config/env_config.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'i_semantic_search_service.dart';
 
@@ -22,24 +22,11 @@ class JapaneseSemanticSearchService implements ISemanticSearchService {
     if (_isInitialized) return;
 
     try {
-      // 1. 環境変数の読み込み
-      // Webでは .env ファイルの読み込みに失敗することがあるため、
-      // --dart-define で渡された値を優先し、なければ .env を読みに行きます。
-      String apiKey = const String.fromEnvironment('GEMINI_API_KEY');
-      
-      if (apiKey.isEmpty) {
-        try {
-          await dotenv.load(fileName: "assets/.env");
-          apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-        } catch (e) {
-          print('⚠️ .env load failed: $e');
-        }
-      }
+      // 1. 環境変数の読み込み（EnvConfigから取得）
+      final apiKey = EnvConfig.geminiApiKey;
 
       if (apiKey.isEmpty) {
         print('❌ Error: GEMINI_API_KEY is missing.');
-        // キーがない場合は初期化失敗とするが、アプリをクラッシュさせないために
-        // フォールバック（文字マッチング）のみで動作するようにする手もある
         return;
       }
 

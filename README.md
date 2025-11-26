@@ -29,6 +29,14 @@ ios
 ```
  デバイスを選ぶと実行できるはず  
 
+ #### デプロイ手順(powershell)
+ ```
+ cd front_end
+ .\build_and_deploy.ps1
+ cd ..
+ firebase deploy --only hosting
+ ```
+
 # flutter_vosk
 
 A new Flutter project.

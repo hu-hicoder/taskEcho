@@ -1,4 +1,5 @@
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_speech_to_text/config/env_config.dart';
 
 /// アプリケーション設定クラス
 class AppConfig {
@@ -15,12 +16,15 @@ class AppConfig {
 
   // Gemini APIキー
   static String? get geminiApiKey {
-    return dotenv.env['GEMINI_API_KEY'];
+    final apiKey = EnvConfig.geminiApiKey;
+    return apiKey.isNotEmpty ? apiKey : null;
   }
 
   // Google Client ID
   static String? get googleClientId {
-    return dotenv.env['GOOGLE_CLIENT_ID'];
+    // ★ EnvConfigから取得するように変更
+    final clientId = EnvConfig.googleClientId;
+    return clientId.isNotEmpty ? clientId : null;
   }
 
   /// 設定情報をコンソールに出力（デバッグ用）

@@ -1,23 +1,23 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-// import 'auth/googleSignIn.dart'; // 未使用のため削除
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'pages/signIn.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speech_to_text/pages/voiceRecognitionPage.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:provider/provider.dart'; // providerをインポート
+import 'package:provider/provider.dart';
 import 'providers/mordalProvider.dart';
 import 'providers/classProvider.dart';
 import 'providers/keywordProvider.dart';
 import 'providers/textsDataProvider.dart';
 import 'providers/recognitionProvider.dart';
 import 'providers/calendar_inbox_provider.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
-import 'dart:async';
+// import 'dart:async';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
+import 'config/env_config.dart';
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -27,15 +27,13 @@ class SpeechToTextApp extends StatelessWidget {
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.cyan,
-        scaffoldBackgroundColor: Color(0xFF0F0F1F), // ダークテーマ背景色
+        scaffoldBackgroundColor: Color(0xFF0F0F1F),
       ),
-      // home: kIsWeb ? const LandingPage() : AuthWrapper(),
       home: AuthWrapper(),
     );
   }
 }
 
-// 認証状態に応じて画面を切り替えるウィジェット
 class AuthWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -45,10 +43,8 @@ class AuthWrapper extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         } else if (snapshot.hasData) {
-          // ログイン中はヘッダー付きメイン画面へ
           return VoiceRecognitionPage();
         } else {
-          // 未ログインはタイトル画面
           return SignInPage();
         }
       },
@@ -56,57 +52,46 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-// SQLiteの初期化関数
 void _initSqlite() {
   if (kIsWeb) {
-    // Webプラットフォームの場合、SQLite FFI Webを使用
     databaseFactory = databaseFactoryFfiWeb;
     print('SQLite Web initialized successfully');
   } else {
-    // モバイルプラットフォームでは標準のSQLiteが使用される
     print('Using default SQLite implementation for mobile');
   }
 }
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Flutter のバインディングを初期化
-  //await dotenv.load(fileName: ".env");
-  // Web版とモバイル版で .env ファイルの読み込み方を分ける
-  if (kIsWeb) {
-    try {
-      // Web版: .envファイルのパスを明示的に指定
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // 環境変数の確認
+  try {
+    if (kIsWeb) {
       await dotenv.load(fileName: ".env");
-      print('✅ .env file loaded successfully (Web)');
-      
-      // APIキーが正しく読み込まれたか確認
-      final geminiKey = dotenv.env['GEMINI_API_KEY'];
-      final googleClientId = dotenv.env['GOOGLE_CLIENT_ID'];
-      
-      if (geminiKey == null || geminiKey.isEmpty) {
-        print('❌ Error: GEMINI_API_KEY is missing.');
-      } else {
-        print('✅ GEMINI_API_KEY loaded');
-      }
-      
-      if (googleClientId == null || googleClientId.isEmpty) {
-        print('⚠️ Warning: GOOGLE_CLIENT_ID is missing.');
-      } else {
-        print('✅ GOOGLE_CLIENT_ID loaded');
-      }
-    } catch (e) {
-      print('❌ Error loading .env file (Web): $e');
-      // エラーが発生しても続行（APIキーが必要な機能は動作しない）
-    }
-  } else {
-    // Android/iOS版: assetsフォルダから読み込む
-    try {
+    } else {
       await dotenv.load(fileName: "assets/.env");
-      print('✅ .env file loaded successfully (Mobile)');
-    } catch (e) {
-      print('❌ Error loading .env file (Mobile): $e');
+    }
+    if (kDebugMode) {
+      print('✅ .env file loaded');
+    }
+  } catch (e) {
+    if (kDebugMode) {
+      print('⚠️ .env file not found (using --dart-define values): $e');
+    }
+  }
+  
+  // 環境変数の確認
+  if (EnvConfig.isConfigured) {
+    print('✅ Environment variables loaded successfully');
+  } else {
+    print('❌ Error: Environment variables are missing.');
+    if (kDebugMode) {
+      print('   GEMINI_API_KEY: ${EnvConfig.geminiApiKey.isEmpty ? "Missing" : "OK"}');
+      print('   GOOGLE_CLIENT_ID: ${EnvConfig.googleClientId.isEmpty ? "Missing" : "OK"}');
     }
   }
 
+  // Firebase初期化
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -129,7 +114,6 @@ void main() async {
     _initSqlite();
   } catch (e) {
     print('SQLite initialization error: $e');
-    // エラーが発生しても続行（SharedPreferencesにフォールバックする可能性）
   }
 
   runApp(

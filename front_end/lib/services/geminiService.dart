@@ -1,5 +1,6 @@
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+// import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:flutter_speech_to_text/config/env_config.dart';
 
 /// フロントエンドでGemini APIを直接呼び出すサービス
 class GeminiService {
@@ -8,7 +9,7 @@ class GeminiService {
   static bool _initialized = false;
   
   // API Key取得
-  static String? get geminiApiKey => dotenv.env['GEMINI_API_KEY'];
+  static String? get geminiApiKey => EnvConfig.geminiApiKey.isNotEmpty ? EnvConfig.geminiApiKey : null;
   
   // 初期化状態の確認
   static bool get isInitialized => _initialized;

@@ -1,2 +1,7 @@
 .DS_Store
 .firebase/
+
+# 環境変数
+**/.env
+**/assets/.env
+**/web/.env
