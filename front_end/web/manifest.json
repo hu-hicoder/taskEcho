@@ -1,11 +1,11 @@
 {
-    "name": "front_end",
-    "short_name": "front_end",
+    "name": "TaskEcho",
+    "short_name": "TaskEcho",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "Anti-Miss App",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

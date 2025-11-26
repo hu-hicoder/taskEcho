@@ -23,7 +23,7 @@ class SpeechToTextApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'taskEcho',
+      title: 'TaskEcho',
       theme: ThemeData(
         brightness: Brightness.dark,
         primarySwatch: Colors.cyan,

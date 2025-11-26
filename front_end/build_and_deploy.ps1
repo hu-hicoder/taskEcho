@@ -24,4 +24,10 @@ flutter build web --release `
   --dart-define=GEMINI_API_KEY=$GEMINI_API_KEY `
   --dart-define=GOOGLE_CLIENT_ID=$GOOGLE_CLIENT_ID
 
+# OGP画像をコピー
+if (Test-Path "web\og-image.png") {
+    Copy-Item "web\og-image.png" "build\web\og-image.png" -Force
+    Write-Host "Copied OGP image" -ForegroundColor Green
+}
+
 Write-Host "Build complete!" -ForegroundColor Green
