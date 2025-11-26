@@ -129,7 +129,7 @@ class RecognitionProvider with ChangeNotifier {
       await _speechToText.listen(
         onResult: _onSpeechResult,
         partialResults: true,
-        localeId: "ja_JP",
+        localeId: "ja-JP",
         pauseFor: Duration(seconds: 60),
         listenMode: ListenMode.dictation,
       );
