@@ -85,13 +85,13 @@ void main() async {
       if (geminiKey == null || geminiKey.isEmpty) {
         print('❌ Error: GEMINI_API_KEY is missing.');
       } else {
-        print('✅ GEMINI_API_KEY loaded: ${geminiKey.substring(0, 10)}...');
+        print('✅ GEMINI_API_KEY loaded');
       }
       
       if (googleClientId == null || googleClientId.isEmpty) {
         print('⚠️ Warning: GOOGLE_CLIENT_ID is missing.');
       } else {
-        print('✅ GOOGLE_CLIENT_ID loaded: ${googleClientId.substring(0, 20)}...');
+        print('✅ GOOGLE_CLIENT_ID loaded');
       }
     } catch (e) {
       print('❌ Error loading .env file (Web): $e');
