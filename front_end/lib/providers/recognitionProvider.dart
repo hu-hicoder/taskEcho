@@ -57,8 +57,8 @@ class RecognitionProvider with ChangeNotifier {
             print("SpeechToTextのエラー: $error"); // ← エラーを確認
             // エラーが発生した場合、特にタイムアウトエラーの場合は再初期化を試みる
             if (_isRecognizing &&
-               (error.errorMsg == "error_speech_timeout" ||
-                error.errorMsg == "error_no_match")) {
+                (error.errorMsg == "error_speech_timeout" ||
+                    error.errorMsg == "error_no_match")) {
               Future.delayed(Duration(milliseconds: 500), () {
                 startListening();
               });
@@ -164,15 +164,21 @@ class RecognitionProvider with ChangeNotifier {
   /// 音声認識の結果をリアルタイムで更新
   void _onSpeechResult(SpeechRecognitionResult result) async {
     String newText = result.recognizedWords.trim();
-    
+
     // 新しいテキストが空でなく、前回と異なる場合のみ処理
     if (newText.isNotEmpty && newText != _lastWords.trim()) {
       _lastWords = " " + newText;
       print('onSpeechResult: $_lastWords');
-      
+
       // 履歴に追加
-      if (newText.length > 3) { // 短すぎるテキストは無視
-        _recognizedTextHistory.add(newText);
+      if (newText.length > 3) {
+        // 短すぎるテキストは無視
+        // 同じフレーズの部分結果は上書きし、重複蓄積を防ぐ
+        if (_recognizedTextHistory.isEmpty) {
+          _recognizedTextHistory.add(newText);
+        } else {
+          _recognizedTextHistory[_recognizedTextHistory.length - 1] = newText;
+        }
         // 履歴が長すぎる場合は古いものを削除
         if (_recognizedTextHistory.length > _maxHistorySize) {
           _recognizedTextHistory.removeAt(0);
@@ -198,7 +204,8 @@ class RecognitionProvider with ChangeNotifier {
   }
 
   /// テキストからキーワードを含む部分の前後の文脈を抽出し、SummaryServiceで要約する
-  Future<String> extractSnippetWithKeyword(String text, List<String> keywords) async {
+  Future<String> extractSnippetWithKeyword(
+      String text, List<String> keywords) async {
     // SummaryServiceを使用してキーワード周辺テキストの抽出・要約を実行
     return await SummaryService.extractAndSummarize(
       _combinedText.isNotEmpty ? _combinedText : text,
