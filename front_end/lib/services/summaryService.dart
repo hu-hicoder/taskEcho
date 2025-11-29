@@ -1,13 +1,17 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../models/models.dart';
 import '../services/geminiService.dart';
+import 'simple_summarize_service.dart';
 
 /// 要約処理を管理するサービス（フロントエンド/バックエンド切り替え対応）
 class SummaryService {
   // 設定関連
-  static bool get useBackend => dotenv.env['USE_BACKEND']?.toLowerCase() == 'true';
+  static bool get useBackend => kIsWeb
+      ? false
+      : (dotenv.env['USE_BACKEND']?.toLowerCase() == 'true');
   static String get backendUrl => dotenv.env['BACKEND_URL'] ?? 'http://localhost:8080';
   
   /// 2段階処理を使用した要約とイベント抽出
@@ -64,6 +68,16 @@ class SummaryService {
   ) async {
     if (keywords.isEmpty) {
       return fullText;
+    }
+
+    // Web版はシンプルな要約を使用
+    if (kIsWeb) {
+      print('🌐 Web版: シンプルな要約を使用');
+      return await SimpleSummarizeService.extractAndSummarize(
+        fullText,
+        keywords,
+        contextLength: contextLength,
+      );
     }
     
     String keyword = keywords.first;

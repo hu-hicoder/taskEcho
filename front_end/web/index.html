@@ -49,6 +49,21 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-cpu"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite/dist/tf-tflite.min.js"></script>
 
+  <!-- リリースモードでコンソールログを無効化 -->
+  <script>
+    // Flutter のリリースビルドかどうかを判定
+    // (main.dart.js が存在する場合はリリースビルド)
+    if (window.location.hostname !== 'localhost' && 
+        window.location.hostname !== '127.0.0.1') {
+      // 本番環境ではコンソールを無効化
+      console.log = function() {};
+      console.warn = function() {};
+      console.error = function() {};
+      console.info = function() {};
+      console.debug = function() {};
+    }
+  </script>
+
   <title>TaskEcho</title>
   <link rel="manifest" href="manifest.json">
 </head>
@@ -70,6 +85,105 @@
     if ('Notification' in window) {
       console.log('Notification permission:', Notification.permission);
     }
+  </script>
+  <!-- Transformers.js による要約機能 -->
+  <script type="module">
+    import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.6.0';
+
+    // Transformers.js の設定
+    env.allowRemoteModels = true;
+    env.allowLocalModels = false;
+
+    let summarizer = null;
+    let isInitializing = false;
+
+    // 要約モデルを初期化
+    window.initSummarizer = async function() {
+      if (summarizer) {
+        console.log('✅ 要約モデルは既に初期化済みです');
+        return true;
+      }
+
+      if (isInitializing) {
+        console.log('⏳ 要約モデルを初期化中...');
+        // 初期化完了を待つ
+        let attempts = 0;
+        while (isInitializing && attempts < 100) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        return summarizer !== null;
+      }
+
+      try {
+        isInitializing = true;
+        console.log('🤖 要約モデルを読み込み中（初回は1-2分かかります）...');
+        
+        // より軽量で安定したモデルに変更
+        // オプション1: 超軽量モデル（英語のみ、高速）
+        summarizer = await pipeline(
+          'summarization',
+          'Xenova/distilbart-cnn-6-6',
+          {
+            quantized: true,  // 量子化モデルを使用（軽量化）
+          }
+        );
+        
+        console.log('✅ 要約モデル読み込み完了');
+        isInitializing = false;
+        return true;
+      } catch (error) {
+        console.error('❌ 要約モデルの初期化に失敗:', error);
+        isInitializing = false;
+        summarizer = null;
+        return false;
+      }
+    };
+
+    // テキストを要約
+    window.summarizeText = async function(text) {
+      try {
+        if (!summarizer) {
+          console.log('要約モデルを初期化します...');
+          const initialized = await window.initSummarizer();
+          if (!initialized) {
+            console.error('❌ 要約モデルの初期化に失敗しました');
+            return null;
+          }
+        }
+
+        // テキストが長すぎる場合は短縮
+        const maxInputLength = 500;
+        const inputText = text.length > maxInputLength 
+          ? text.substring(0, maxInputLength) + '...'
+          : text;
+
+        console.log('📝 要約を生成中...', inputText.substring(0, 50) + '...');
+
+        const result = await summarizer(inputText, {
+          max_length: 100,
+          min_length: 20,
+          do_sample: false,
+          num_beams: 2,  // ビーム探索を減らして高速化
+        });
+
+        const summary = result[0].summary_text;
+        console.log('✅ 要約完了:', summary);
+        
+        return summary;
+      } catch (error) {
+        console.error('❌ 要約エラー:', error);
+        return null;
+      }
+    };
+
+    // ページ読み込み時に事前初期化（オプション - コメントアウト可能）
+    // window.addEventListener('load', () => {
+    //   console.log('🔧 バックグラウンドで要約モデルを準備中...');
+    //   setTimeout(() => {
+    //     window.initSummarizer();
+    //   }, 3000);  // 3秒後に初期化開始
+    // });
   </script>
 </body>
 </html>

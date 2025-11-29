@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/classProvider.dart';
@@ -8,6 +9,7 @@ import '../providers/keywordProvider.dart';
 import '../models/calendar_event_proposal.dart';
 import '../models/event_time.dart';
 import '../models/reminder.dart';
+import 'simple_summarize_service.dart';
 import 'voiceRecognitionService.dart';
 import 'backend_service.dart';
 import '../providers/calendar_inbox_provider.dart';
@@ -109,11 +111,23 @@ class VoiceRecognitionUIService extends ChangeNotifier {
           // 【本番】バックエンドに音声テキストを送信して要約とカレンダー情報を取得
           final firstKeyword =
               detectedKeywords.isNotEmpty ? detectedKeywords.first : null;
-          processVoiceTextWithBackend(
-            context,
-            text: newRecognizedText,
-            keyword: firstKeyword,
-          );
+
+          // ★ プラットフォーム別に処理を分岐
+          if (kIsWeb) {
+            // Web版: シンプルな要約を実行
+            processVoiceTextLocally(
+              context,
+              text: newRecognizedText,
+              keyword: firstKeyword,
+            );
+          } else {
+            // Android版: バックエンドに送信
+            processVoiceTextWithBackend(
+              context,
+              text: newRecognizedText,
+              keyword: firstKeyword,
+            );
+          }
 
           // キーワードごとに1分後にDBに保存
           for (String detectedKeyword in detectedKeywords) {
@@ -265,6 +279,53 @@ class VoiceRecognitionUIService extends ChangeNotifier {
     _skippedEvents.clear();
     notifyListeners();
     print('🗑️ イベントキューをクリアしました');
+  }
+
+  /// 【Web版（デモ）用】音声認識テキストをローカルで処理し、簡易要約を実行する
+  ///
+  /// [context] BuildContext
+  /// [text] 音声認識で取得したテキスト
+  /// [keyword] キーワード（オプション）
+  ///
+  /// 戻り値: 処理が成功した場合はtrue、失敗した場合はfalse
+  Future<bool> processVoiceTextLocally(
+    BuildContext context, {
+    required String text,
+    String? keyword,
+  }) async {
+    try {
+      print('🌐 Web版: 音声テキストをローカルで処理開始...');
+      print('  テキスト: $text');
+      print('  キーワード: ${keyword ?? "なし"}');
+
+      // SimpleSummarizeServiceを使って簡易要約
+      final summary = await SimpleSummarizeService.extractAndSummarize(
+        text,
+        keyword != null ? [keyword] : [],
+        contextLength: 200,
+      );
+
+      print('📝 簡易要約結果: $summary');
+
+      // 要約テキストを表示用に保存
+      _updateTextLists(text, summary);
+
+      // Web版ではカレンダーイベント抽出はスキップ（デモのため）
+      print('ℹ️ Web版ではカレンダーイベント抽出はスキップされます（デモモード）');
+
+      // UIを更新
+      notifyListeners();
+      
+      return true;
+    } catch (e) {
+      print('❌ Web版ローカル処理エラー: $e');
+      
+      // エラーが発生した場合は元のテキストをそのまま表示
+      _updateTextLists(text, text);
+      notifyListeners();
+      
+      return false;
+    }
   }
 
   /// 【本番用】音声認識テキストをバックエンドに送信し、要約とカレンダーイベントを取得する

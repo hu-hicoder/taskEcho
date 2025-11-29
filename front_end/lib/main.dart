@@ -11,13 +11,14 @@ import 'providers/keywordProvider.dart';
 import 'providers/textsDataProvider.dart';
 import 'providers/recognitionProvider.dart';
 import 'providers/calendar_inbox_provider.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 // import 'dart:async';
 import 'firebase_options.dart';
 import 'services/notification_service.dart';
 import 'config/env_config.dart';
+import 'services/transformers_summarizer.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode, kReleaseMode, debugPrint;
 
 class SpeechToTextApp extends StatelessWidget {
   @override
@@ -63,6 +64,11 @@ void _initSqlite() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  
+  if (kReleaseMode) {
+    debugPrint = (String? message, {int? wrapWidth}) {};
+  }
   
   // 環境変数の確認
   try {
@@ -109,6 +115,11 @@ void main() async {
   // ローカル通知初期化(Android)
   await NotificationService.init();
 
+  // Web版の場合、Transformers.js を初期化
+  if (kIsWeb) {
+    _initializeTransformers();
+  }
+
   // SQLiteの初期化
   try {
     _initSqlite();
@@ -129,6 +140,22 @@ void main() async {
       child: SpeechToTextApp(),
     ),
   );
+}
+
+// ★ Transformers.js 初期化関数を追加
+Future<void> _initializeTransformers() async {
+  print('🚀 Transformers.js の初期化を開始...');
+  
+  // 非同期で初期化（バックグラウンドで実行）
+  TransformersSummarizer.initialize().then((success) {
+    if (success) {
+      print('✅ Transformers.js 初期化成功');
+    } else {
+      print('⚠️ Transformers.js 初期化失敗（フォールバック処理を使用します）');
+    }
+  }).catchError((e) {
+    print('❌ Transformers.js 初期化エラー: $e');
+  });
 }
 
 // import 'package:flutter/material.dart';
