@@ -54,5 +54,22 @@
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // サービスワーカーの登録（通知用）
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('flutter_service_worker.js')
+        .then((registration) => {
+          console.log('Service Worker registered:', registration);
+        })
+        .catch((error) => {
+          console.log('Service Worker registration failed:', error);
+        });
+    }
+
+    // 通知権限を事前に確認
+    if ('Notification' in window) {
+      console.log('Notification permission:', Notification.permission);
+    }
+  </script>
 </body>
 </html>
