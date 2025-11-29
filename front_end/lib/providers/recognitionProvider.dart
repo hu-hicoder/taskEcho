@@ -110,6 +110,14 @@ class RecognitionProvider with ChangeNotifier {
     }
   }
 
+  /// 認識中のキャッシュを手動で初期化する
+  void clearRecognitionData() {
+    _lastWords = '';
+    _recognizedTextHistory.clear();
+    _combinedText = '';
+    notifyListeners();
+  }
+
   /// 音声認識を開始（リアルタイム認識）
   Future<void> startListening() async {
     try {
