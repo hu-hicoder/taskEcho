@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_speech_to_text/services/googleCalendarService.dart';
 import 'package:http/http.dart' as http;
 import '../providers/textsDataProvider.dart';
 import '../providers/recognitionProvider.dart';
@@ -63,9 +61,6 @@ class VoiceRecognitionService {
   String _pendingText = "";
   String _currentPhrasePrefix = "";
   int maxWords = 100;
-
-  // 呼び出し済みのsummarizedTextsを追跡するセット
-  Set<String> calledeventTime = {};
 
   // フレーズ変更時の更新処理
   void updatePhraseIfNeeded(String newRecognizedText, String selectedClass,
@@ -179,97 +174,12 @@ class VoiceRecognitionService {
 
       print('キーワード "$keyword" を保存しました: $snippet');
 
-      // 日時パターン検出とカレンダー登録
-      await _processCalendarRegistration(snippet, keywordData.detectionTime);
-
       // 保存が完了したらマップから削除
       _pendingKeywordData.remove(uniqueKey);
     } catch (e) {
       print('キーワード "$keyword" の保存中にエラーが発生しました: $e');
       // エラーが発生した場合もマップから削除
       _pendingKeywordData.remove(uniqueKey);
-    }
-  }
-
-  // カレンダー登録処理
-  Future<void> _processCalendarRegistration(
-      String snippet, DateTime detectionTime) async {
-    final now = detectionTime;
-    DateTime? eventDt;
-
-    // 1. 相対日＋時刻：「今日」「明日」「明後日」
-    final rel =
-        RegExp(r'(今日|明日|明後日)(?:\s*(\d{1,2}:\d{2}))?').firstMatch(snippet);
-    if (rel != null) {
-      int days = rel.group(1) == '明日'
-          ? 1
-          : rel.group(1) == '明後日'
-              ? 2
-              : 0;
-      final base = now.add(Duration(days: days));
-      if (rel.group(2) != null) {
-        final p = rel.group(2)!.split(':');
-        eventDt = DateTime(
-            base.year, base.month, base.day, int.parse(p[0]), int.parse(p[1]));
-      } else {
-        eventDt = DateTime(base.year, base.month, base.day, 9, 0);
-      }
-    }
-    // 2. 「YYYY/MM/DD [HH:mm]」
-    else {
-      final ymd =
-          RegExp(r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:\s*(\d{1,2}:\d{2}))?')
-              .firstMatch(snippet);
-      if (ymd != null) {
-        final y = int.parse(ymd.group(1)!),
-            m = int.parse(ymd.group(2)!),
-            d = int.parse(ymd.group(3)!);
-        if (ymd.group(4) != null) {
-          final p = ymd.group(4)!.split(':');
-          eventDt = DateTime(y, m, d, int.parse(p[0]), int.parse(p[1]));
-        } else {
-          eventDt = DateTime(y, m, d, 9, 0);
-        }
-      }
-      // 3. 「M月D日 [HH:mm]」
-      else {
-        final md = RegExp(r'(\d{1,2})月(\d{1,2})日(?:\s*(\d{1,2}:\d{2}))?')
-            .firstMatch(snippet);
-        if (md != null) {
-          final m = int.parse(md.group(1)!), d = int.parse(md.group(2)!);
-          if (md.group(3) != null) {
-            final p = md.group(3)!.split(':');
-            eventDt =
-                DateTime(now.year, m, d, int.parse(p[0]), int.parse(p[1]));
-          } else {
-            eventDt = DateTime(now.year, m, d, 9, 0);
-          }
-        }
-        // 4. 時刻のみ「HH:mm」
-        else {
-          final t = RegExp(r'(\d{1,2}:\d{2})').firstMatch(snippet);
-          if (t != null) {
-            final p = t.group(1)!.split(':');
-            eventDt = DateTime(
-                now.year, now.month, now.day, int.parse(p[0]), int.parse(p[1]));
-          }
-        }
-      }
-    }
-
-    if (eventDt != null && FirebaseAuth.instance.currentUser != null) {
-      try {
-        final service = GoogleCalendarService();
-        await service.createEvent(
-          eventTime: eventDt,
-          summary: snippet,
-          duration: Duration(hours: 1),
-          timeZone: 'Asia/Tokyo',
-        );
-        print('Googleカレンダーにイベントを追加しました');
-      } catch (e) {
-        print('カレンダー登録エラー: $e');
-      }
     }
   }
 

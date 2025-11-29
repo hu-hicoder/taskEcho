@@ -33,7 +33,8 @@ class CalendarInboxPage extends StatelessWidget {
           final items = inbox.items;
           if (items.isEmpty) {
             return const Center(
-              child: Text('インボックスは空です', style: TextStyle(color: Colors.black54)),
+              child:
+                  Text('インボックスは空です', style: TextStyle(color: Colors.black54)),
             );
           }
           return ListView.separated(
@@ -43,9 +44,13 @@ class CalendarInboxPage extends StatelessWidget {
               final item = items[index];
               final p = item.proposal;
               return ListTile(
-                title: Text(p.summary, style: const TextStyle(color: Colors.black87)),
+                title: Text(p.summary,
+                    style: const TextStyle(color: Colors.black87)),
                 subtitle: Text(
-                  _formatDateTime(p) + (p.location != null && p.location!.isNotEmpty ? ' @ ${p.location}' : ''),
+                  _formatDateTime(p) +
+                      (p.location != null && p.location!.isNotEmpty
+                          ? ' @ ${p.location}'
+                          : ''),
                   style: const TextStyle(color: Colors.black54),
                 ),
                 trailing: Row(
@@ -63,10 +68,14 @@ class CalendarInboxPage extends StatelessWidget {
                               uiService: null,
                               onConfirm: (updated) {
                                 // 設定のみ保存して閉じる
-                                context.read<CalendarInboxProvider>().updateProposal(item.id, updated);
+                                context
+                                    .read<CalendarInboxProvider>()
+                                    .updateProposal(item.id, updated);
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('設定を保存しました: ${updated.summary}')),
+                                    SnackBar(
+                                        content: Text(
+                                            '設定を保存しました: ${updated.summary}')),
                                   );
                                 }
                               },
@@ -83,9 +92,12 @@ class CalendarInboxPage extends StatelessWidget {
                           await svc.createEventFromProposal(p);
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('カレンダーに追加しました: ${p.summary}')),
+                              SnackBar(
+                                  content: Text('カレンダーに追加しました: ${p.summary}')),
                             );
-                            context.read<CalendarInboxProvider>().removeById(item.id);
+                            context
+                                .read<CalendarInboxProvider>()
+                                .removeById(item.id);
                           }
                         } catch (e) {
                           if (context.mounted) {
@@ -99,7 +111,9 @@ class CalendarInboxPage extends StatelessWidget {
                     ),
                     TextButton(
                       onPressed: () {
-                        context.read<CalendarInboxProvider>().removeById(item.id);
+                        context
+                            .read<CalendarInboxProvider>()
+                            .removeById(item.id);
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(content: Text('削除しました: ${p.summary}')),
                         );

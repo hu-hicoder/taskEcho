@@ -104,6 +104,7 @@ class _EditableCalendarEventSheetState
     if (pickedDate != null) {
       setState(() {
         if (isStart) {
+          final prevEnd = _endDateTime;
           _startDateTime = DateTime(
             pickedDate.year,
             pickedDate.month,
@@ -111,6 +112,19 @@ class _EditableCalendarEventSheetState
             _startDateTime.hour,
             _startDateTime.minute,
           );
+          // 終了日付が開始とずれていた場合は同日にそろえる（時間は保持）
+          if (prevEnd != null &&
+              (prevEnd.year != _startDateTime.year ||
+                  prevEnd.month != _startDateTime.month ||
+                  prevEnd.day != _startDateTime.day)) {
+            _endDateTime = DateTime(
+              _startDateTime.year,
+              _startDateTime.month,
+              _startDateTime.day,
+              prevEnd.hour,
+              prevEnd.minute,
+            );
+          }
           // 開始日が終了日より後になった場合、終了日を調整
           if (_endDateTime != null && _startDateTime.isAfter(_endDateTime!)) {
             _endDateTime = _startDateTime.add(Duration(hours: 1));
