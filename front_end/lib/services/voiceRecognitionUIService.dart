@@ -69,6 +69,11 @@ class VoiceRecognitionUIService extends ChangeNotifier {
     final keywordProvider =
         Provider.of<KeywordProvider>(context, listen: false);
 
+    // 停止中は更新しない
+    if (!recognitionProvider.isRecognizing) {
+      return;
+    }
+
     try {
       // 認識結果を取得
       String newRecognizedText = recognitionProvider.lastWords;
@@ -82,6 +87,11 @@ class VoiceRecognitionUIService extends ChangeNotifier {
           keywordProvider,
           recognitionProvider,
         );
+
+        // 停止操作が入った場合は UI 更新をスキップ
+        if (!recognitionProvider.isRecognizing) {
+          return;
+        }
 
         // UIの更新用にデータを格納
         detectedKeywords = processedData.detectedKeywords;
@@ -405,6 +415,7 @@ class VoiceRecognitionUIService extends ChangeNotifier {
     _voiceService.savePendingTextOnStop(selectedClass, textsDataProvider);
 
     recognitionProvider.stopListening();
+    recognitionProvider.clearRecognitionData();
     timer?.cancel();
     stopFlashing();
     resetKeywordDisplay();
