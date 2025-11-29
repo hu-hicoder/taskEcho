@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/calendar_inbox_provider.dart';
+import '../mock/calendar_mock_data.dart';
 import '../services/googleCalendarService.dart';
 import '../models/calendar_event_proposal.dart';
 import '../widgets/editable_calendar_event_sheet.dart';
@@ -32,8 +33,23 @@ class CalendarInboxPage extends StatelessWidget {
         builder: (context, inbox, _) {
           final items = inbox.items;
           if (items.isEmpty) {
-            return const Center(
-              child: Text('インボックスは空です', style: TextStyle(color: Colors.black54)),
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('インボックスは空です', style: TextStyle(color: Colors.black54)),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      context.read<CalendarInboxProvider>().addAll(CalendarMockData.proposals);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('モックデータを追加しました')),
+                      );
+                    },
+                    child: const Text('モックデータを追加'),
+                  ),
+                ],
+              ),
             );
           }
           return ListView.separated(
